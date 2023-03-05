@@ -17,6 +17,15 @@ static uint32_t         ermak_cfg_freqA = 14074000;
 static uint32_t         ermak_cfg_freqB = 21074000;
 static uint16_t         ermak_cfg_passband = 2700;
 
+static bool ermak_chk_vfo(ERMAK_VFO_MODE_t * pVfo)
+{
+    if((*pVfo != ERMAK_VFO_MODE_A) && (*pVfo != ERMAK_VFO_MODE_B))
+        *pVfo = ermak_cfg_vfo;
+
+    return (*pVfo == ERMAK_VFO_MODE_B);
+}
+
+
 void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 {
     switch(pMsg->command)
@@ -43,22 +52,17 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
             break;
 
         case ERMAK_COMMAND_SET_DDS:
-            if(pMsg->vfoData.vfo == ERMAK_VFO_MODE_A)
-                ermak_cfg_freqA = pMsg->vfoData.freq;
-            else if(pMsg->vfoData.vfo == ERMAK_VFO_MODE_B)
-                ermak_cfg_freqB = pMsg->vfoData.freq;
-            else if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)
-                ermak_cfg_freqA = pMsg->vfoData.freq;
-            else
-                ermak_cfg_freqB = pMsg->vfoData.freq;
+             if(ermak_chk_vfo(&pMsg->vfoData.vfo))
+                 ermak_cfg_freqB = pMsg->vfoData.freq;
+             else
+                 ermak_cfg_freqA = pMsg->vfoData.freq;
             break;
 
         case ERMAK_COMMAND_GET_VFO:
-            if(pMsg->vfoData.vfo == ERMAK_VFO_MODE_A)
-                pMsg->vfoData.freq = ermak_cfg_freqA;
-            else
+            if(ermak_chk_vfo(&pMsg->vfoData.vfo))
                 pMsg->vfoData.freq = ermak_cfg_freqB;
-            pMsg->vfoData.vfo = ermak_cfg_vfo;
+            else
+                pMsg->vfoData.freq = ermak_cfg_freqA;
             break;
 
         case ERMAK_COMMAND_SWITCH_VFO:
@@ -104,19 +108,14 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
             break;
 
         case ERMAK_COMMAND_GET_EXTD_INFO:
-            if(pMsg->extdInfo.vfo == ERMAK_VFO_MODE_A)
-                pMsg->extdInfo.freq = ermak_cfg_freqA;
-            else if(pMsg->extdInfo.vfo == ERMAK_VFO_MODE_B)
+            if(ermak_chk_vfo(&pMsg->extdInfo.vfo))
                 pMsg->extdInfo.freq = ermak_cfg_freqB;
-            else if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)
-                pMsg->extdInfo.freq = ermak_cfg_freqA;
             else
-                pMsg->extdInfo.freq = ermak_cfg_freqB;
+                pMsg->extdInfo.freq = ermak_cfg_freqA;
 
             pMsg->extdInfo.passband = ermak_cfg_passband;
             pMsg->extdInfo.split = ermak_cfg_split;
             pMsg->extdInfo.mode = ermak_cfg_mode;
-            pMsg->extdInfo.vfo = ermak_cfg_vfo;
             break;
 
         default:

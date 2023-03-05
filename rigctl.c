@@ -114,11 +114,17 @@ static RIGCTL_COMMAND_t _rigctlCommands[] = {
 
 
 static char * rigctl_cvtVfo2Str(ERMAK_VFO_MODE_t vfo) {
-    if(vfo == ERMAK_VFO_MODE_A)
+    switch(vfo) {
+    case ERMAK_VFO_MODE_A:
         return "VFOA";
-    else if(vfo == ERMAK_VFO_MODE_B)
+    case ERMAK_VFO_MODE_B:
         return "VFOB";
-    return "UNK";
+
+    // ToDo VFO: Sub, Main, currVFO, MEM, TX, RX
+
+    default:
+        return "currVFO";
+    }
 }
 
 static char * rigctl_cvtMode2Str(ERMAK_MODE_t mode) {
@@ -197,7 +203,6 @@ static void NotifyWEBRemote(ERMAK_NOTIFY_TYPE_t type){
 static void cbRigCTLChkVFO(RIGCTL_PARM_t* pParm){
     if(longReply) {
         snprintf(_str, sizeof(_str), "ChkVFO: %d\n", chkvfo);
-        sendRprt = RIG_OK;
     }
     else
         snprintf(_str, sizeof(_str), "%d\n", chkvfo);
@@ -234,7 +239,6 @@ static void cbRigCTLGetVFOinfo(RIGCTL_PARM_t *pParm)
         if(longReply) {
             //"get_vfo_info: currVFO ?\n"
             snprintf(_str, sizeof(_str), "VFOA VFOB\n");
-            sendRprt = RIG_OK;
         }
         else {
             snprintf(_str, sizeof(_str), "VFOA VFOB\n");
@@ -248,7 +252,6 @@ static void cbRigCTLGetVFOinfo(RIGCTL_PARM_t *pParm)
         if(longReply) {
             snprintf(_str,sizeof(_str), "get_vfo_info: currVFO %s\nFreq: %u\nMode: %s\nWidth: %d\nSplit: %d\nSatMode: 0\n",
                 rigctl_cvtVfo2Str(msg.extdInfo.vfo), msg.extdInfo.freq, rigctl_cvtMode2Str(msg.extdInfo.mode), msg.extdInfo.passband, msg.extdInfo.split);
-            sendRprt = RIG_OK;
         }
         else {
             snprintf(_str,sizeof(_str), "%u\n%s\n%d\n%d\n0\n",
@@ -269,7 +272,6 @@ static void cbRigCTLGetPowerState(RIGCTL_PARM_t* pParm){
     if(longReply) {
         // "get_powerstat: currVFO"
         snprintf(_str,sizeof(_str),"Power Status: 1\n");
-        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str),"1\n");
 }
@@ -286,7 +288,6 @@ static void cbRigCTLGetPowerState(RIGCTL_PARM_t* pParm){
     if(longReply) {
         // "get_lock_mode: currVFO"
         snprintf(_str,sizeof(_str), "Locked: %d\n", msg.lock);
-        sendRprt = RIG_OK;
     }
     else
         snprintf(_str,sizeof(_str), "%d\n", msg.lock);
@@ -322,7 +323,6 @@ static void cbRigCTLGetFreq(RIGCTL_PARM_t* pParm){
     if(longReply) {
         // "get_freq: %s", rigctl_cvtVfo2Str(msg.freqModeData.vfo)
         snprintf(_str,sizeof(_str), "Frequency: %u\n", msg.freqModeData.freq);
-        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str), "%u\n",msg.freqModeData.freq);
 }
@@ -377,7 +377,6 @@ static void cbRigCTLGetVFO(RIGCTL_PARM_t* pParm){
     if(longReply) {
         // "get_vfo: currVFO"
         snprintf(_str,sizeof(_str), "VFO: %s\n", rigctl_cvtVfo2Str(msg.vfoData.vfo));
-        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str), "%s\n", rigctl_cvtVfo2Str(msg.vfoData.vfo));
 }
@@ -430,7 +429,6 @@ static void cbRigCTLGetMode(RIGCTL_PARM_t *pParm){
    if (longReply) {
         // "get_mode: VFOA"
         snprintf(_str,sizeof(_str),"Mode: %s\nPassband: %d\n", mode, msg.freqModeData.passband);
-        sendRprt = RIG_OK;
     }
     else {
         snprintf(_str,sizeof(_str),"%s\n%d\n", mode, msg.freqModeData.passband);
@@ -477,7 +475,6 @@ static void cbRigCTLGetPTT(RIGCTL_PARM_t* pParm){
     if (longReply) {
         // "get_ptt: None"
         snprintf(_str,sizeof(_str), "PTT: %d\n",msg.transmittRx.transmitt);
-        sendRprt = RIG_OK;
     }else
         snprintf(_str,sizeof(_str), "%d\n",msg.transmittRx.transmitt);
 }
@@ -515,7 +512,6 @@ static void cbRigCTLGetSplitVFO(RIGCTL_PARM_t* pParm){
     if (longReply) {
         // "get_split_vfo: VFOA"
         snprintf(_str,sizeof(_str),"Split: %d\nTX VFO: %s\n", msg.extdInfo.split, rigctl_cvtVfo2Str(msg.extdInfo.vfo));
-        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str),"%d\n%s\n", msg.extdInfo.split, rigctl_cvtVfo2Str(msg.extdInfo.vfo));
     }
@@ -550,7 +546,6 @@ static void cbRigCTLGetSplitMode(RIGCTL_PARM_t* pParm) {
 
     if (longReply) {
         snprintf(_str,sizeof(_str),"TX Mode: %s\nTX Passband: %d\n", mode, msg.freqModeData.passband);
-        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str),"%s\n%d\n", mode, msg.freqModeData.passband);
     }
@@ -569,7 +564,6 @@ static void cbRigCTLGetSplitFreq(RIGCTL_PARM_t* pParm) {
 
     if (longReply) {
         snprintf(_str,sizeof(_str), "TX VFO: %d\n", msg.extdInfo.freq);
-        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str), "%d\n", msg.extdInfo.freq);
     }
@@ -669,49 +663,56 @@ static int rigctl_parse_in(char *pBuf)
 
 int rigctl_req(char *pReq, char *pResp)
 {
-    if(pReq[strlen(pReq) - 1] != '\n')  return 0;
-    const char delimreq[] = "\r\n";
-    pReq = strtok(pReq, delimreq);
+    size_t len = strlen(pReq);
+    if(pReq[len - 1] != '\n')  return 0;
+    if(pReq[len - 2] == '\r')
+        pReq[len - 2] = 0;
+    else
+        pReq[len - 1] = 0;
 
-    sendRprt = -1;
+    //const char delimreq[] = "\r\n";
+    //pReq = strtok(pReq, delimreq);
+
+    sendRprt = RIG_EEND;
     _str[0] = 0;
 
-    LOG_REQUEST(pReq);;
+    LOG_REQUEST(pReq);
 
     if(rigctl_parse_in(pReq) < 0)
         return -1;
 
     // Replace delimiter
-    size_t sendLen = strlen(_str);
-    if((sendLen != 0) && (ansSep != '\n'))
-    {
-        int i;
-        for(i = 0; i < sendLen; i++)
-        {
-            if(_str[i] == '\n')
-                _str[i] = ansSep;
+    len = strlen(_str);
+    if(len != 0) {
+        if (ansSep != '\n') {
+            int i;
+            for(i = 0; i < len; i++)
+                if(_str[i] == '\n') _str[i] = ansSep;
         }
+
+        if((longReply) && (sendRprt == RIG_EEND))
+            sendRprt = RIG_OK;
     }
 
-    if(sendRprt != -1)
+    if(sendRprt != RIG_EEND)
     {
         char rprt[10];
         sendRprt = -sendRprt;
-        if((sendLen == 0) || (ansSep == '\n'))
+        if((len == 0) || (ansSep == '\n'))
             snprintf(rprt,sizeof(rprt), "RPRT %d\n", sendRprt);
         else
             snprintf(rprt,sizeof(rprt), "\nRPRT %d\n", sendRprt);
         strcat(_str, rprt);
     }
 
-    sendLen = strlen(_str);
+    len = strlen(_str);
 
-    if(0 != sendLen){
+    if(0 != len){
         // Send Answer
         strcpy(pResp, _str);
 
         LOG_RESPONSE(_str);
     }
 
-    return sendLen;
+    return len;
 }
