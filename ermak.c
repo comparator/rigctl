@@ -17,8 +17,6 @@ static uint32_t         ermak_cfg_freqA = 14074000;
 static uint32_t         ermak_cfg_freqB = 21074000;
 static uint16_t         ermak_cfg_passband = 2700;
 
-// ToDo Change Freq On Sleep
-
 void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 {
     switch(pMsg->command)
@@ -46,6 +44,10 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 
         case ERMAK_COMMAND_SET_DDS:
             if(pMsg->vfoData.vfo == ERMAK_VFO_MODE_A)
+                ermak_cfg_freqA = pMsg->vfoData.freq;
+            else if(pMsg->vfoData.vfo == ERMAK_VFO_MODE_B)
+                ermak_cfg_freqB = pMsg->vfoData.freq;
+            else if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)
                 ermak_cfg_freqA = pMsg->vfoData.freq;
             else
                 ermak_cfg_freqB = pMsg->vfoData.freq;

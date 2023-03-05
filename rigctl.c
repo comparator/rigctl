@@ -311,7 +311,7 @@ static void cbRigCTLSetFreq(RIGCTL_PARM_t* pParm){
     ERMAK_MSG_t msg;
     msg.command = ERMAK_COMMAND_SET_DDS;
     msg.vfoData.rx 	= ERMAK_RX_MAIN;
-    msg.vfoData.vfo = ERMAK_VFO_MODE_A;
+    msg.vfoData.vfo = -1;
 
     uint32_t freq;
     if(pParm->parm[1] != NULL)          // Includes VFO
@@ -320,6 +320,8 @@ static void cbRigCTLSetFreq(RIGCTL_PARM_t* pParm){
 
         if(strcmp(pParm->parm[0], "VFOB") == 0)
             msg.vfoData.vfo = ERMAK_VFO_MODE_B;
+        else if(strcmp(pParm->parm[0], "VFOA") == 0)
+            msg.vfoData.vfo = ERMAK_VFO_MODE_A;
     }
     else if(pParm->parm[0] != NULL)     // Only Frequency
     {
@@ -644,23 +646,18 @@ int rigctl_req(peer_t * peer)
     char * pReq = peer->rx_buff;        // Data Buffer
 
     if(pReq[strlen(pReq) - 1] != '\n')  return 0;
+    pReq[strlen(pReq) - 1] = 0;
 
-    const char delimstr[] = "\r\n";
+    //fprintf(stdout, "Req:'%s'\n", pReq);
+    if(rigctl_parse_in(pReq) < 0)
+        return -1;
 
-    pReq = strtok(pReq, delimstr);
-    while((pReq != NULL) && (strlen(pReq) > 0)) {
-        //fprintf(stdout, "Req:'%s'\n", pReq);
-        if(rigctl_parse_in(pReq) < 0)
-            return -1;
-
-        size_t sendLen = strlen(_str);
-        if(0 != sendLen){
-            // Send Answer
-            strcpy(peer->tx_buff, _str);
-            peer->to_send = sendLen;
-        }
-
-        pReq = strtok(NULL, delimstr);
+    size_t sendLen = strlen(_str);
+    if(0 != sendLen){
+        // Send Answer
+        strcpy(peer->tx_buff, _str);
+        peer->to_send = sendLen;
     }
+
     return 0;
 }
