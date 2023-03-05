@@ -38,6 +38,6 @@ enum rig_errcode_e {
 
 
 
-int rigctl_req(peer_t * peer);
+int rigctl_req(char *pReq, char *pResp);
 
 #endif /* RIGCTL_H */

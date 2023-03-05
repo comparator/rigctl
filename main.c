@@ -12,18 +12,36 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "common.h"
+
 #include "rigctl.h"
+
 
 #define RIGCTLPORT      4532
 
 #define MAX_CLIENTS     4
 #define NO_SOCKET       -1
 
+#define SIZE_OF_TXBUFF  1426        // Header Size 54 Bytes, Paket Lang - 1480
+#define SIZE_OF_RXBUFF  32
+
+
+typedef struct {
+  int       socket;
+  struct    sockaddr_in addres;
+
+  //message_t sending_buffer;
+  char      tx_buff[SIZE_OF_TXBUFF];
+  size_t    to_send;
+
+  /* The same for the receiving message. */
+  char      rx_buff[SIZE_OF_RXBUFF];
+} peer_t;
+
 
 short int port;
 int listen_sock;
 peer_t connection_list[MAX_CLIENTS];
+
 
 int parse_parm(int argc, char *argv[])
 {
@@ -224,8 +242,12 @@ int receive_from_peer(peer_t *peer)
     }
     else {
       peer->rx_buff[received_count] = 0;
-      if(rigctl_req(peer) < 0)
-        return -1;
+
+      int len = rigctl_req(peer->rx_buff, peer->tx_buff);
+      if(len < 0)
+          return -1;
+
+      peer->to_send = len;
     }
   } while (received_count > 0);
 

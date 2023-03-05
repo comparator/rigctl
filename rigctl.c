@@ -2,18 +2,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-#include "common.h"
 #include "ermak.h"
 #include "dump_state.h"
 #include "rigctl.h"
 
 
-#define BUF_TX_LEN      (1426)       // TCP Header 54 Bytes, Paket Size = 1480, Ok for All network
+//#define LOG_REQUEST(x)      fprintf(stdout, "RQ:%s\n", x)
+//#define LOG_RESPONSE(x)     fprintf(stdout, "RSP:\n%s", x)
+#define LOG_REQUEST(x)
+#define LOG_RESPONSE(x)
+#define LOG_ERRCMD(x)       fprintf(stderr, "cmd '%s' not found\n", x)
+//#define LOG_REQUEST(x)      slogf( _SLOG_SETCODE(_SLOGC_TEST, 2), _SLOG_INFO, x)
+//#define LOG_RESPONSE(x)     slogf( _SLOG_SETCODE(_SLOGC_TEST, 4), _SLOG_INFO, x)
+//#define LOG_ERRCMD(x)       slogf( _SLOG_SETCODE(_SLOGC_TEST, 6), _SLOG_INFO, x)
 
+#define BUF_TX_LEN      (1426)       // TCP Header 54 Bytes, Paket Size = 1480, Ok for All network
 
 #define SEND_REQUEST_TO_ERMAK(x)    ermak_SendRequest(&x)
 
@@ -34,6 +39,7 @@ typedef struct RIGCTL_COMMAND_t{
 static char _str[BUF_TX_LEN] = {0};
 static bool longReply = false;
 static char ansSep = '\n';
+static int  sendRprt = -1;
 static char chkvfo = 0;     // if chkvfo == 1 need a VFOA/VFOB
 
 
@@ -169,9 +175,17 @@ static ERMAK_MODE_t rigctl_cvtStr2Mode(char * pStr) {
     return ERMAK_MODE_UNK;
 }
 
-static void rigctl_SendRprt(int rprt) {
-    snprintf(_str,sizeof(_str), "RPRT %d\n", rprt);
+/**
+ *
+ * @param type
+ */
+static void NotifyWEBRemote(ERMAK_NOTIFY_TYPE_t type){
+	ERMAK_MSG_t msg;
+	msg.command = ERMAK_COMMAND_NOTIFY_WEB_REMOTE;
+	msg.notifyType = type;
+	SEND_REQUEST_TO_ERMAK(msg);
 }
+
 
 /////////////////////////////////////////////////
 
@@ -181,8 +195,10 @@ static void rigctl_SendRprt(int rprt) {
  * @param pParm
  */
 static void cbRigCTLChkVFO(RIGCTL_PARM_t* pParm){
-    if(longReply)
+    if(longReply) {
         snprintf(_str, sizeof(_str), "ChkVFO: %d\n", chkvfo);
+        sendRprt = RIG_OK;
+    }
     else
         snprintf(_str, sizeof(_str), "%d\n", chkvfo);
 }
@@ -201,20 +217,24 @@ static void cbRigCTLDumpState(RIGCTL_PARM_t* pParm){
  */
 static void cbRigCTLGetVFOinfo(RIGCTL_PARM_t *pParm)
 {
-    ERMAK_VFO_MODE_t vfo = ERMAK_VFO_MODE_A;
+    ERMAK_VFO_MODE_t vfo = -1;
     bool ext_info = false;
 
     if(pParm->parm[0] != NULL)
     {
-        if(strcmp(pParm->parm[0], "VFOB") == 0) {
-            vfo = ERMAK_VFO_MODE_B; }
+        if(strcmp(pParm->parm[0], "VFOA") == 0)
+            vfo = ERMAK_VFO_MODE_A;
+        else if(strcmp(pParm->parm[0], "VFOB") == 0)
+            vfo = ERMAK_VFO_MODE_B;
         else if((strcmp(pParm->parm[0], "?") == 0))
             ext_info = true;
     }
 
     if (ext_info) {
         if(longReply) {
-            snprintf(_str, sizeof(_str), "get_vfo_info: currVFO ?\nVFOA VFOB\nRPRT 0\n");
+            //"get_vfo_info: currVFO ?\n"
+            snprintf(_str, sizeof(_str), "VFOA VFOB\n");
+            sendRprt = RIG_OK;
         }
         else {
             snprintf(_str, sizeof(_str), "VFOA VFOB\n");
@@ -226,8 +246,9 @@ static void cbRigCTLGetVFOinfo(RIGCTL_PARM_t *pParm)
         SEND_REQUEST_TO_ERMAK(msg);
 
         if(longReply) {
-            snprintf(_str,sizeof(_str), "get_vfo_info: currVFO %s\nFreq: %u\nMode: %s\nWidth: %d\nSplit: %d\nSatMode: 0\nRPRT 0\n",
+            snprintf(_str,sizeof(_str), "get_vfo_info: currVFO %s\nFreq: %u\nMode: %s\nWidth: %d\nSplit: %d\nSatMode: 0\n",
                 rigctl_cvtVfo2Str(msg.extdInfo.vfo), msg.extdInfo.freq, rigctl_cvtMode2Str(msg.extdInfo.mode), msg.extdInfo.passband, msg.extdInfo.split);
+            sendRprt = RIG_OK;
         }
         else {
             snprintf(_str,sizeof(_str), "%u\n%s\n%d\n%d\n0\n",
@@ -247,7 +268,8 @@ static void cbRigCTLGetPowerState(RIGCTL_PARM_t* pParm){
     // Always reply with ON
     if(longReply) {
         // "get_powerstat: currVFO"
-        snprintf(_str,sizeof(_str),"Power Status: 1\nRPRT 0\n");
+        snprintf(_str,sizeof(_str),"Power Status: 1\n");
+        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str),"1\n");
 }
@@ -263,7 +285,8 @@ static void cbRigCTLGetPowerState(RIGCTL_PARM_t* pParm){
 
     if(longReply) {
         // "get_lock_mode: currVFO"
-        snprintf(_str,sizeof(_str), "Locked: %d\nRPRT 0\n", msg.lock);
+        snprintf(_str,sizeof(_str), "Locked: %d\n", msg.lock);
+        sendRprt = RIG_OK;
     }
     else
         snprintf(_str,sizeof(_str), "%d\n", msg.lock);
@@ -283,7 +306,7 @@ static void cbRigCTLSetLockMode(RIGCTL_PARM_t* pParm){
         msg.lock = ERMAK_LOCK_OFF;
     }
     SEND_REQUEST_TO_ERMAK(msg);
-    rigctl_SendRprt(RIG_OK);
+    sendRprt = RIG_OK;
 }
 
 /**
@@ -298,7 +321,8 @@ static void cbRigCTLGetFreq(RIGCTL_PARM_t* pParm){
 
     if(longReply) {
         // "get_freq: %s", rigctl_cvtVfo2Str(msg.freqModeData.vfo)
-        snprintf(_str,sizeof(_str), "Frequency: %u\nRPRT 0\n", msg.freqModeData.freq);
+        snprintf(_str,sizeof(_str), "Frequency: %u\n", msg.freqModeData.freq);
+        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str), "%u\n",msg.freqModeData.freq);
 }
@@ -328,15 +352,15 @@ static void cbRigCTLSetFreq(RIGCTL_PARM_t* pParm){
         freq = (uint32_t)strtof(pParm->parm[0], NULL);
     }
     else {  // Parm error
-        rigctl_SendRprt(-RIG_EINVAL);
+        sendRprt = RIG_EINVAL;
         return;
     }
 
     msg.vfoData.freq = freq;
     SEND_REQUEST_TO_ERMAK(msg);
 
-    rigctl_SendRprt(RIG_OK);
-    //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
+    sendRprt = RIG_OK;
+    NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
 }
 
 /**
@@ -352,7 +376,8 @@ static void cbRigCTLGetVFO(RIGCTL_PARM_t* pParm){
 
     if(longReply) {
         // "get_vfo: currVFO"
-        snprintf(_str,sizeof(_str), "VFO: %s\nRPRT 0\n", rigctl_cvtVfo2Str(msg.vfoData.vfo));
+        snprintf(_str,sizeof(_str), "VFO: %s\n", rigctl_cvtVfo2Str(msg.vfoData.vfo));
+        sendRprt = RIG_OK;
     } else
         snprintf(_str,sizeof(_str), "%s\n", rigctl_cvtVfo2Str(msg.vfoData.vfo));
 }
@@ -363,15 +388,13 @@ static void cbRigCTLGetVFO(RIGCTL_PARM_t* pParm){
  */
 static void cbRigCTLSetVFO(RIGCTL_PARM_t* pParm){
     if(pParm->parm[0] == NULL) {
-        rigctl_SendRprt(-RIG_EINVAL);
+        sendRprt = RIG_EINVAL;
         return;
     }
 
     if(strcmp(pParm->parm[0], "?") == 0) {
-        if(ansSep != '\n')
-            snprintf(_str,sizeof(_str), "set_vfo: currVFO ?%cVFOA VFOB%c\nRPRT 0\n", ansSep, ansSep);
-        else
-            snprintf(_str,sizeof(_str), "set_vfo: currVFO ?\nVFOA VFOB\nRPRT 0\n");
+        snprintf(_str,sizeof(_str), "set_vfo: currVFO ?\nVFOA VFOB\n");
+        sendRprt = RIG_OK;
         return;
     }
     else
@@ -386,8 +409,8 @@ static void cbRigCTLSetVFO(RIGCTL_PARM_t* pParm){
         }
 
         SEND_REQUEST_TO_ERMAK(msg);
-        rigctl_SendRprt(RIG_OK);
-        //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
+        sendRprt = RIG_OK;
+        NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
     }
 }
 
@@ -406,7 +429,8 @@ static void cbRigCTLGetMode(RIGCTL_PARM_t *pParm){
 
    if (longReply) {
         // "get_mode: VFOA"
-        snprintf(_str,sizeof(_str),"Mode: %s\nPassband: %d\nRPRT 0\n", mode, msg.freqModeData.passband);
+        snprintf(_str,sizeof(_str),"Mode: %s\nPassband: %d\n", mode, msg.freqModeData.passband);
+        sendRprt = RIG_OK;
     }
     else {
         snprintf(_str,sizeof(_str),"%s\n%d\n", mode, msg.freqModeData.passband);
@@ -435,14 +459,14 @@ static void cbRigCTLSetMode(RIGCTL_PARM_t* pParm){
     }
 
     if(mode == ERMAK_MODE_UNK) {
-        rigctl_SendRprt(RIG_EINVAL);
+        sendRprt =  RIG_EINVAL;
         return;
     }
     msg.freqModeData.mode = mode;
 
     SEND_REQUEST_TO_ERMAK(msg);
-    rigctl_SendRprt(RIG_OK);
-    //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
+    sendRprt = RIG_OK;
+    NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
 }
 
 static void cbRigCTLGetPTT(RIGCTL_PARM_t* pParm){
@@ -452,7 +476,8 @@ static void cbRigCTLGetPTT(RIGCTL_PARM_t* pParm){
     SEND_REQUEST_TO_ERMAK(msg);
     if (longReply) {
         // "get_ptt: None"
-        snprintf(_str,sizeof(_str), "PTT: %d\nRPRT 0\n",msg.transmittRx.transmitt);
+        snprintf(_str,sizeof(_str), "PTT: %d\n",msg.transmittRx.transmitt);
+        sendRprt = RIG_OK;
     }else
         snprintf(_str,sizeof(_str), "%d\n",msg.transmittRx.transmitt);
 }
@@ -475,8 +500,8 @@ static void cbRigCTLSetPTT(RIGCTL_PARM_t* pParm){
     }
 
     SEND_REQUEST_TO_ERMAK(msg);
-    rigctl_SendRprt(RIG_OK);
-    //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_RXTX);
+    sendRprt = RIG_OK;
+    NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_RXTX);
 }
 
 // Split Section
@@ -489,7 +514,8 @@ static void cbRigCTLGetSplitVFO(RIGCTL_PARM_t* pParm){
 
     if (longReply) {
         // "get_split_vfo: VFOA"
-        snprintf(_str,sizeof(_str),"Split: %d\nTX VFO: %s\nRPRT 0\n", msg.extdInfo.split, rigctl_cvtVfo2Str(msg.extdInfo.vfo));
+        snprintf(_str,sizeof(_str),"Split: %d\nTX VFO: %s\n", msg.extdInfo.split, rigctl_cvtVfo2Str(msg.extdInfo.vfo));
+        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str),"%d\n%s\n", msg.extdInfo.split, rigctl_cvtVfo2Str(msg.extdInfo.vfo));
     }
@@ -508,8 +534,8 @@ static void cbRigCTLSetSplitVFO(RIGCTL_PARM_t* pParm) {
         msg.extdInfo.vfo == ERMAK_VFO_MODE_A;
 
     SEND_REQUEST_TO_ERMAK(msg);
-    rigctl_SendRprt(RIG_OK);
-    //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_RXTX);
+    sendRprt = RIG_OK;
+    NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_RXTX);
 }
 
 
@@ -523,7 +549,8 @@ static void cbRigCTLGetSplitMode(RIGCTL_PARM_t* pParm) {
     mode = rigctl_cvtMode2Str(msg.freqModeData.mode);
 
     if (longReply) {
-        snprintf(_str,sizeof(_str),"TX Mode: %s\nTX Passband: %d\nRPRT 0\n", mode, msg.freqModeData.passband);
+        snprintf(_str,sizeof(_str),"TX Mode: %s\nTX Passband: %d\n", mode, msg.freqModeData.passband);
+        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str),"%s\n%d\n", mode, msg.freqModeData.passband);
     }
@@ -531,7 +558,7 @@ static void cbRigCTLGetSplitMode(RIGCTL_PARM_t* pParm) {
 
 static void cbRigCTLSetSplitMode(RIGCTL_PARM_t* pParm) {
     // ToDo check Parm 0 - mode, 1 passband
-    rigctl_SendRprt(RIG_OK);
+    sendRprt = RIG_OK;
 }
 
 
@@ -541,7 +568,8 @@ static void cbRigCTLGetSplitFreq(RIGCTL_PARM_t* pParm) {
     SEND_REQUEST_TO_ERMAK(msg);
 
     if (longReply) {
-        snprintf(_str,sizeof(_str), "TX VFO: %d\nRPRT 0\n", msg.extdInfo.freq);
+        snprintf(_str,sizeof(_str), "TX VFO: %d\n", msg.extdInfo.freq);
+        sendRprt = RIG_OK;
     } else {
         snprintf(_str,sizeof(_str), "%d\n", msg.extdInfo.freq);
     }
@@ -561,15 +589,15 @@ static void cbRigCTLSetSplitFreq(RIGCTL_PARM_t* pParm) {
         freq = (uint32_t)strtof(pParm->parm[0], NULL);
     }
     else {  // Parm error
-        rigctl_SendRprt(RIG_EINVAL);
+        sendRprt = RIG_EINVAL;
         return;
     }
 
     msg.extdInfo.freq = freq;
     SEND_REQUEST_TO_ERMAK(msg);
 
-    rigctl_SendRprt(RIG_OK);
-    //NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
+    sendRprt = RIG_OK;
+    NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
 }
 
 
@@ -622,8 +650,6 @@ static int rigctl_parse_in(char *pBuf)
     RIGCTL_COMMAND_t * cmdlist;
     cmdlist = &_rigctlCommands[i++];
 
-    _str[0] = 0;
-
     while(cmdlist->command != NULL){
         if(strcmp(cmdlist->command, cmdin) == 0) {
             
@@ -635,29 +661,57 @@ static int rigctl_parse_in(char *pBuf)
         cmdlist  = &_rigctlCommands[i++];
     }
 
-    fprintf(stderr, "cmd '%s' not found\n", cmdin);
-    rigctl_SendRprt(-RIG_ENAVAIL);
+    LOG_ERRCMD(cmdin);
+    sendRprt =  RIG_ENAVAIL;
 
     return 0;
 }
 
-int rigctl_req(peer_t * peer)
+int rigctl_req(char *pReq, char *pResp)
 {
-    char * pReq = peer->rx_buff;        // Data Buffer
-
     if(pReq[strlen(pReq) - 1] != '\n')  return 0;
-    pReq[strlen(pReq) - 1] = 0;
+    const char delimreq[] = "\r\n";
+    pReq = strtok(pReq, delimreq);
 
-    //fprintf(stdout, "Req:'%s'\n", pReq);
+    sendRprt = -1;
+    _str[0] = 0;
+
+    LOG_REQUEST(pReq);;
+
     if(rigctl_parse_in(pReq) < 0)
         return -1;
 
+    // Replace delimiter
     size_t sendLen = strlen(_str);
-    if(0 != sendLen){
-        // Send Answer
-        strcpy(peer->tx_buff, _str);
-        peer->to_send = sendLen;
+    if((sendLen != 0) && (ansSep != '\n'))
+    {
+        int i;
+        for(i = 0; i < sendLen; i++)
+        {
+            if(_str[i] == '\n')
+                _str[i] = ansSep;
+        }
     }
 
-    return 0;
+    if(sendRprt != -1)
+    {
+        char rprt[10];
+        sendRprt = -sendRprt;
+        if((sendLen == 0) || (ansSep == '\n'))
+            snprintf(rprt,sizeof(rprt), "RPRT %d\n", sendRprt);
+        else
+            snprintf(rprt,sizeof(rprt), "\nRPRT %d\n", sendRprt);
+        strcat(_str, rprt);
+    }
+
+    sendLen = strlen(_str);
+
+    if(0 != sendLen){
+        // Send Answer
+        strcpy(pResp, _str);
+
+        LOG_RESPONSE(_str);
+    }
+
+    return sendLen;
 }

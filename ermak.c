@@ -106,6 +106,10 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
         case ERMAK_COMMAND_GET_EXTD_INFO:
             if(pMsg->extdInfo.vfo == ERMAK_VFO_MODE_A)
                 pMsg->extdInfo.freq = ermak_cfg_freqA;
+            else if(pMsg->extdInfo.vfo == ERMAK_VFO_MODE_B)
+                pMsg->extdInfo.freq = ermak_cfg_freqB;
+            else if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)
+                pMsg->extdInfo.freq = ermak_cfg_freqA;
             else
                 pMsg->extdInfo.freq = ermak_cfg_freqB;
 
