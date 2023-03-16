@@ -1,6 +1,6 @@
 CC = gcc
-OBJ = main.o rigctl.o ermak.o
-BINNAME = rigsrv
+OBJ = main.o config.o network.o ermak.o rigctl.o
+BINNAME = pollsrv
 
 all: $(OBJ)
 	$(CC) -o $(BINNAME) $(OBJ)
