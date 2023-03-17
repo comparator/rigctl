@@ -664,6 +664,7 @@ static int rigctl_parse_in(char *pBuf)
 int rigctl_req(char *pReq, char *pResp)
 {
     size_t len = strlen(pReq);
+    if(len < 2) return 0;
     if(pReq[len - 1] != '\n')  return 0;
     if(pReq[len - 2] == '\r')
         pReq[len - 2] = 0;
