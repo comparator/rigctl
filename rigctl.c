@@ -371,7 +371,7 @@ static void cbRigCTLGetVFO(RIGCTL_PARM_t* pParm){
 	ERMAK_MSG_t msg;
 	msg.command = ERMAK_COMMAND_GET_VFO;
 	msg.vfoData.rx  = ERMAK_RX_MAIN;
-	msg.vfoData.vfo = ERMAK_VFO_MODE_A;
+	msg.vfoData.vfo = -1;
 	SEND_REQUEST_TO_ERMAK(msg);
 
     if(longReply) {
@@ -613,10 +613,11 @@ static int rigctl_parse_in(char *pBuf)
         pBuf++;
     }
     else if(ch == '#') {                            // Skip comment
-        while(ch != '\n') {
-            ch = *(++pBuf);
-            if(ch == 0) return 0;
-        }
+        //while(ch != '\n') {
+        //    ch = *(++pBuf);
+        //    if(ch == 0) return 0;
+        //}
+        return 0;
     }
     else if(ch == 'q' || ch == 'Q')                 // close connection
     {
@@ -664,15 +665,6 @@ static int rigctl_parse_in(char *pBuf)
 int rigctl_req(char *pReq, char *pResp)
 {
     size_t len = strlen(pReq);
-    if(len < 2) return 0;
-    if(pReq[len - 1] != '\n')  return 0;
-    if(pReq[len - 2] == '\r')
-        pReq[len - 2] = 0;
-    else
-        pReq[len - 1] = 0;
-
-    //const char delimreq[] = "\r\n";
-    //pReq = strtok(pReq, delimreq);
 
     sendRprt = RIG_EEND;
     _str[0] = 0;

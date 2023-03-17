@@ -29,9 +29,8 @@
 
 typedef struct {
     char        channel;
-    char        *rxbuf;
+    char        rxbuf[PEER_MAX_RX_SIZE];
     int         rxpos;
-    char        *txbuf;
 }PEER_t;
 
 
@@ -42,6 +41,7 @@ static PEER_t           peer[MAX_CLIENT_CONNECTIONS];
 static struct pollfd    net_fds[MAX_CLIENT_CONNECTIONS];
 static int              net_nfds = 0;
 static bool             compress_array = false;
+static char             peer_txbuf[PEER_MAX_TX_SIZE];
 
 
 static void receive_from_peer(int idx)
@@ -52,10 +52,10 @@ static void receive_from_peer(int idx)
     char chn = peer[idx].channel;
     int pos = peer[idx].rxpos;
     char *pRxBuff = peer[idx].rxbuf;
-    char *pTxBuff = peer[idx].txbuf;
 
     char ch;
     int rc;
+
     while((rc = recv(sock, &ch, sizeof(char), MSG_DONTWAIT)) == sizeof(char))
     {
         if(pos < PEER_MAX_RX_SIZE)
@@ -64,15 +64,16 @@ static void receive_from_peer(int idx)
             {
                 if(((ch == '\n') || (ch == '\r')) && (pos > 0))
                 {
-                    pRxBuff[pos++] = '\n';
                     pRxBuff[pos] = 0;
 
-                    int len = rigctl_req(pRxBuff, pTxBuff);
+                    int len = rigctl_req(pRxBuff, peer_txbuf);
                     if(len < 0)
+                    {
                         close_conn = true;
+                    }
                     else if(len > 0)
                     {
-                        if (send(sock, pTxBuff, len, 0) < 0)
+                        if (send(sock, peer_txbuf, len, 0) < 0)
                         {
                             perror("  send() failed");
                             close_conn = true;
@@ -132,12 +133,14 @@ static void receive_from_peer(int idx)
     }
     else if (rc == 0)   /* connection closed by the client */
     {
-        printf("  Connection closed\n");
+        printf("  Connection closed by the client\n");
         close_conn = true;
     }
 
     if (close_conn)
     {
+        printf("  Connection closed by the server\n");
+
         close(sock);
         net_fds[idx].fd = NO_SOCKET;
         compress_array = true;
@@ -234,9 +237,7 @@ static int handle_new_connection(int in_socket, char chn)
     net_fds[net_nfds].events = POLLIN;
 
     peer[net_nfds].channel = chn;
-    peer[net_nfds].rxbuf = calloc(PEER_MAX_RX_SIZE + 1, sizeof(char));      // trailing x00
     peer[net_nfds].rxpos = 0;
-    peer[net_nfds].txbuf = calloc(PEER_MAX_TX_SIZE, sizeof(char));
 
     net_nfds++;
 
@@ -252,8 +253,6 @@ void net_close_sockets(void)
     {
         if(net_fds[i].fd >= 0) {
             close(net_fds[i].fd);
-            free(peer[i].rxbuf);
-            free(peer[i].txbuf);
         }
     }
 }
@@ -317,8 +316,14 @@ int net_poll(void)
 
         if(net_fds[i].revents != POLLIN)
         {
-            fprintf(stderr, "  Error! revents = %d\n", net_fds[i].revents);
-            //return -1;
+            fprintf(stderr, "Error! revents = %d\n", net_fds[i].revents);
+
+            if(net_fds[i].fd != NO_SOCKET)
+            {
+                close(net_fds[i].fd);
+                net_fds[i].fd = NO_SOCKET;
+            }
+            compress_array = true;
             continue;
         }
 
@@ -354,9 +359,9 @@ int net_poll(void)
           {
             net_fds[j].fd = net_fds[j+1].fd;
 
-            free(peer[j].rxbuf);
-            free(peer[j].txbuf);
-            peer[j] = peer[j+1];
+            peer[j].channel = peer[j+1].channel;
+            memcpy(peer[j].rxbuf, peer[j+1].rxbuf, PEER_MAX_RX_SIZE);
+            peer[j].rxpos = peer[j+1].rxpos;
           }
           i--;
           net_nfds--;
