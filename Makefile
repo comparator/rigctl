@@ -1,5 +1,5 @@
 CC = gcc
-OBJ = main.o config.o network.o ermak.o rigctl.o
+OBJ = main.o config.o network.o ermak.o rigctl.o commcat.o
 BINNAME = pollsrv
 
 all: $(OBJ)

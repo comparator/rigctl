@@ -14,6 +14,7 @@
 #include "network.h"
 
 #include "rigctl.h"
+#include "commcat.h"
 
 
 #define MAX_CLIENT_CONNECTIONS  12
@@ -79,7 +80,6 @@ static void receive_from_peer(int idx)
                             close_conn = true;
                         }
                     }
-
                     pos = 0;
                 }
                 else if(ch >= 0x20 && ch <= 0x7E)
@@ -95,14 +95,19 @@ static void receive_from_peer(int idx)
             {
                 if((ch == ';') && (pos > 1))
                 {
-                    pRxBuff[pos++] = ch;
                     pRxBuff[pos] = 0;
-                    printf("C: %s\n", pRxBuff);
-                    /* Echo the data back to the client */
-                    if (send(sock, pRxBuff, pos, 0) < 0)
+                    int len = commcat_req(pRxBuff, peer_txbuf);
+                    if(len < 0)
                     {
-                        perror("  send() failed");
                         close_conn = true;
+                    }
+                    else if(len > 0)
+                    {
+                        if (send(sock, peer_txbuf, len, 0) < 0)
+                        {
+                            perror("  send() failed");
+                            close_conn = true;
+                        }
                     }
                     pos = 0;
                 }
