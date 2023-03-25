@@ -15,7 +15,10 @@ static ERMAK_MODE_t     ermak_cfg_mode  = ERMAK_MODE_PKTUSB;
 
 static uint32_t         ermak_cfg_freqA = 14074000;
 static uint32_t         ermak_cfg_freqB = 21074000;
-static uint16_t         ermak_cfg_passband = 2700;
+
+//static uint16_t         ermak_cfg_passband = 2700;
+static uint16_t			ermak_cfg_bp_high = 2800;
+static uint16_t			ermak_cfg_bp_low  = 100;
 
 static bool ermak_chk_vfo(ERMAK_VFO_MODE_t * pVfo)
 {
@@ -25,19 +28,88 @@ static bool ermak_chk_vfo(ERMAK_VFO_MODE_t * pVfo)
     return (*pVfo == ERMAK_VFO_MODE_B);
 }
 
-
+/*
+typedef struct{
+  ERMAK_RX_t          rx;
+  ERMAK_STACK_MEM_t      stackMem;
+	ERMAK_TRANSMIT_t		ptt;
+  ERMAK_BAND_t        band;
+  ERMAK_BAND_EDGE_t      edges;
+	ERMAK_MODE_t			mode;
+	uint32_t				freq;
+	ERMAK_VFO_FREQS_t		vfoFreq;
+	ERMAK_VFO_MODE_t		vfoMode;
+	ERMAK_VFO_MODE_t		vfoRX;
+	ERMAK_VFO_MODE_t		vfoTX;
+	ERMAK_SPLIT_t			split;
+  ERMAK_RIT_HIT_INFO_t     ritXitInfo;
+  ERMAK_LNA_ATT_t        lnaAtt;
+	ERMAK_RX_FILTER_SETTINGS_t	filter;
+  int16_t            rfGain;
+  int16_t            afGain;
+  ERMAK_AF_MUTE_t        afMute;
+  ERMAK_NOB_t          nob;
+  ERMAK_NR_t          nor;
+  ERMAK_ANF_t          anf;
+  ERMAK_AGC_TYPE_t      agc;
+  bool            agcOn;
+	ERMAK_LOCK_t				lock;
+  ERMAK_VOX_t          vox;
+  ERMAK_ANT_t          rxAnt;
+  ERMAK_ANT_t          txAnt;
+}ERMAK_FULL_INFO_t;
+*/
 void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 {
-    switch(pMsg->command)
-    {
-        case ERMAK_COMMAND_GET_LOCK:
-            pMsg->lock = ermak_cfg_lock;
-            break;
+	switch(pMsg->command)
+	{
+		case ERMAK_COMMAND_GET_FULL_INFO:
+			pMsg->fullInfo.ptt			= ermag_cfg_ptt;
+			pMsg->fullInfo.mode			= ermak_cfg_mode;
+			pMsg->fullInfo.freq = (ermak_cfg_vfo == ERMAK_VFO_MODE_A) ? ermak_cfg_freqA : ermak_cfg_freqB;
+			pMsg->fullInfo.vfoFreq.vfoA = ermak_cfg_freqA;
+			pMsg->fullInfo.vfoFreq.vfoB = ermak_cfg_freqB;
+			pMsg->fullInfo.vfoMode		= ermak_cfg_vfo;
+			pMsg->fullInfo.vfoRX		= ermak_cfg_vfo;
+			pMsg->fullInfo.vfoTX		= ermak_cfg_vfoS;
+			pMsg->fullInfo.split		= ermak_cfg_split;
+			pMsg->fullInfo.filter.bandPassHigh = ermak_cfg_bp_high;
+			pMsg->fullInfo.filter.bandPassLow = ermak_cfg_bp_low;
+			pMsg->fullInfo.lock			= ermak_cfg_lock;
+			break;
 
-        case ERMAK_COMMAND_SET_LOCK:
-            ermak_cfg_lock = pMsg->lock;
-            break;
+		case ERMAK_COMMAND_SET_LOCK:
+			if(pMsg->lockOn)
+				ermak_cfg_lock = ERMAK_LOCK_ON;
+			else
+				ermak_cfg_lock = ERMAK_LOCK_OFF;
+			break;
 
+		case ERMAK_COMMAND_SWITCH_VFO:
+			ermak_cfg_vfo = pMsg->vfoData.vfo;
+			break;
+
+		case ERMAK_COMMAND_SET_VFO:
+			if(ermak_chk_vfo(&pMsg->vfoData.vfo))
+				ermak_cfg_freqB = pMsg->vfoData.freq;
+			else
+				ermak_cfg_freqA = pMsg->vfoData.freq;
+			break;
+
+		case ERMAK_COMMAND_SET_MODE:
+			ermak_cfg_mode = pMsg->freqModeData.mode;
+			break;
+
+		case ERMAK_COMMAND_SET_TRANSMITT_RX:
+			// ToDo pMsg->transmittRx.rx - Main/Sub
+			ermag_cfg_ptt = pMsg->transmittRx.transmitt;
+			break;
+
+		case ERMAK_COMMAND_SET_SPLIT:
+			ermak_cfg_split = pMsg->kenwoodFT.split;
+			ermak_cfg_vfoS = pMsg->kenwoodFT.vfoRx;
+			break;
+/*
         case ERMAK_COMMAND_GET_FREQ_MODE:
             if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)
                 pMsg->freqModeData.freq = ermak_cfg_freqA;
@@ -47,17 +119,6 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
             pMsg->freqModeData.passband = ermak_cfg_passband;
             break;
 
-        case ERMAK_COMMAND_SET_MODE:
-            ermak_cfg_mode = pMsg->freqModeData.mode;
-            break;
-
-        case ERMAK_COMMAND_SET_DDS:
-             if(ermak_chk_vfo(&pMsg->vfoData.vfo))
-                 ermak_cfg_freqB = pMsg->vfoData.freq;
-             else
-                 ermak_cfg_freqA = pMsg->vfoData.freq;
-            break;
-
         case ERMAK_COMMAND_GET_VFO:
             if(ermak_chk_vfo(&pMsg->vfoData.vfo))
                 pMsg->vfoData.freq = ermak_cfg_freqB;
@@ -65,17 +126,11 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
                 pMsg->vfoData.freq = ermak_cfg_freqA;
             break;
 
-        case ERMAK_COMMAND_SWITCH_VFO:
-            ermak_cfg_vfo = pMsg->vfoData.vfo;
-            break;
-
         case ERMAK_COMMAND_GET_TX_RX:
             pMsg->transmittRx.transmitt = ermag_cfg_ptt;
             break;
 
-        case ERMAK_COMMAND_SET_TRANSMITT_RX:
-            ermag_cfg_ptt = pMsg->transmittRx.transmitt;
-            break;
+
 
         case ERMAK_COMMAND_GET_SPLIT:
             pMsg->extdInfo.split = ermak_cfg_split;
@@ -91,10 +146,7 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
             }
             break;
 
-        case ERMAK_COMMAND_SET_SPLIT:
-            ermak_cfg_split = pMsg->extdInfo.split;
-            ermak_cfg_vfoS = pMsg->extdInfo.vfo;
-            break;
+
 
         case ERMAK_COMMAND_SET_SPLIT_FREQ:
             if(ermak_cfg_vfoS == ERMAK_VFO_MODE_A)
@@ -117,7 +169,7 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
             pMsg->extdInfo.split = ermak_cfg_split;
             pMsg->extdInfo.mode = ermak_cfg_mode;
             break;
-
+*/
         default:
             break;
     }

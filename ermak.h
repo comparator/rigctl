@@ -13,40 +13,40 @@
 
 typedef enum{
 	ERMAK_NOTIFY_TYPE_WEB_ALL 		= 0,
-	ERMAK_NOTIFY_TYPE_TCI_ALL 		= 1,
-	ERMAK_NOTIFY_TYPE_BOTH_ALL 		= 2,
+	//ERMAK_NOTIFY_TYPE_TCI_ALL 		= 1,
+	//ERMAK_NOTIFY_TYPE_BOTH_ALL 		= 2,
 
-	ERMAK_NOTIFY_TYPE_WEB_FREQ  	= 3,
-	ERMAK_NOTIFY_TYPE_TCI_FREQ 		= 4,
-	ERMAK_NOTIFY_TYPE_BOTH_FREQ 	= 5,
+	//ERMAK_NOTIFY_TYPE_WEB_FREQ  	= 3,
+	//ERMAK_NOTIFY_TYPE_TCI_FREQ 		= 4,
+	//ERMAK_NOTIFY_TYPE_BOTH_FREQ 	= 5,
 
-	ERMAK_NOTIFY_TYPE_WEB_MODE  	= 6,
-	ERMAK_NOTIFY_TYPE_TCI_MODE  	= 7,
-	ERMAK_NOTIFY_TYPE_BOTH_MODE  	= 8,
+	//ERMAK_NOTIFY_TYPE_WEB_MODE  	= 6,
+	//ERMAK_NOTIFY_TYPE_TCI_MODE  	= 7,
+	//ERMAK_NOTIFY_TYPE_BOTH_MODE  	= 8,
 
-	ERMAK_NOTIFY_TYPE_WEB_VFO  		= 9,
-	ERMAK_NOTIFY_TYPE_TCI_VFO  		= 10,
-	ERMAK_NOTIFY_TYPE_BOTH_VFO  	= 11,
+	//ERMAK_NOTIFY_TYPE_WEB_VFO  		= 9,
+	//ERMAK_NOTIFY_TYPE_TCI_VFO  		= 10,
+	//ERMAK_NOTIFY_TYPE_BOTH_VFO  	= 11,
 
 	ERMAK_NOTIFY_TYPE_WEB_RXTX  	= 12,
-	ERMAK_NOTIFY_TYPE_TCI_RXTX 		= 13,
-	ERMAK_NOTIFY_TYPE_BOTH_RXTX 	= 14,
+	//ERMAK_NOTIFY_TYPE_TCI_RXTX 		= 13,
+	//ERMAK_NOTIFY_TYPE_BOTH_RXTX 	= 14,
 
-	ERMAK_NOTIFY_TYPE_WEB_NB 		= 15,
-	ERMAK_NOTIFY_TYPE_TCI_NB 		= 16,
-	ERMAK_NOTIFY_TYPE_BOTH_NB 		= 17,
+	//ERMAK_NOTIFY_TYPE_WEB_NB 		= 15,
+	//ERMAK_NOTIFY_TYPE_TCI_NB 		= 16,
+	//ERMAK_NOTIFY_TYPE_BOTH_NB 		= 17,
 
-	ERMAK_NOTIFY_TYPE_WEB_NR 		= 18,
-	ERMAK_NOTIFY_TYPE_TCI_NR 		= 19,
-	ERMAK_NOTIFY_TYPE_BOTH_NR 		= 20,
+	//ERMAK_NOTIFY_TYPE_WEB_NR 		= 18,
+	//ERMAK_NOTIFY_TYPE_TCI_NR 		= 19,
+	//ERMAK_NOTIFY_TYPE_BOTH_NR 		= 20,
 
-	ERMAK_NOTIFY_TYPE_WEB_ANF 		= 21,
-	ERMAK_NOTIFY_TYPE_TCI_ANF 		= 22,
-	ERMAK_NOTIFY_TYPE_BOTH_ANF 		= 23,
+	//ERMAK_NOTIFY_TYPE_WEB_ANF 		= 21,
+	//ERMAK_NOTIFY_TYPE_TCI_ANF 		= 22,
+	//ERMAK_NOTIFY_TYPE_BOTH_ANF 		= 23,
 
-	ERMAK_NOTIFY_TYPE_WEB_TX_POWER 	= 24,
-	ERMAK_NOTIFY_TYPE_TCI_TX_POWER 	= 25,
-	ERMAK_NOTIFY_TYPE_BOTH_TX_POWER = 26,
+	//ERMAK_NOTIFY_TYPE_WEB_TX_POWER 	= 24,
+	//ERMAK_NOTIFY_TYPE_TCI_TX_POWER 	= 25,
+	//ERMAK_NOTIFY_TYPE_BOTH_TX_POWER = 26,
 
 }ERMAK_NOTIFY_TYPE_t;
 
@@ -58,10 +58,10 @@ typedef enum{
 	ERMAK_MODE_FM 	= 0x34, // 4
 	ERMAK_MODE_CWL 	= 0x35, // 7
 	ERMAK_MODE_FSK 	= 0x36,     // Legacy
-    ERMAK_MODE_PKTLSB = 0x37,   // 6
-    ERMAK_MODE_PKTUSB = 0x39,   // 9
-    ERMAK_MODE_UNK    = -1
+	ERMAK_MODE_PKTUSB = 0x39   // 9
 }ERMAK_MODE_t;
+
+
 
 typedef enum{
 	ERMAK_TRANSMIT_OFF = 0,
@@ -92,7 +92,7 @@ typedef enum{
 
 
 typedef enum{
-	ERMAK_COMMAND_GET_FREQ_MODE = 0,
+	//ERMAK_COMMAND_GET_FREQ_MODE = 0,
 	//ERMAK_COMMAND_SET_FREQ 		= 1,
 	ERMAK_COMMAND_SET_MODE 		= 2,
 	//ERMAK_COMMAND_SET_RX_FILTER = 3,
@@ -100,7 +100,7 @@ typedef enum{
 	//ERMAK_COMMAND_SET_TX 		= 5,
 
 	//ERMAK_COMMAND_CLR_TX 		= 6,
-	ERMAK_COMMAND_GET_TX_RX 	= 7,
+	//ERMAK_COMMAND_GET_TX_RX 	= 7,
 
 	//ERMAK_COMMAND_SET_BAND 		= 8,
 	//ERMAK_COMMAND_SET_AF_MUTE 	= 9,
@@ -150,11 +150,11 @@ typedef enum{
 	//ERMAK_COMMAND_GET_RX_FILTER				= 39,
 	//ERMAK_COMMAND_GET_RX_FILTER_LIST		= 40,
 
-	//ERMAK_COMMAND_SET_VFO					= 41,
-	ERMAK_COMMAND_GET_VFO					= 42,
+	ERMAK_COMMAND_SET_VFO					= 41,
+	//ERMAK_COMMAND_GET_VFO					= 42,
 
 	//ERMAK_COMMAND_GET_MODE 					= 43,
-	ERMAK_COMMAND_SET_DDS					= 44,
+	//ERMAK_COMMAND_SET_DDS					= 44,
 	//ERMAK_COMMAND_GET_DDS					= 45,
 
 	//ERMAK_COMMAND_SET_MODE_RX 				= 46,
@@ -193,25 +193,31 @@ typedef enum{
 	//ERMAK_COMMAND_GET_VFO_FREQ				= 74,
 	//ERMAK_COMMAND_UPDATE_VFO_FREQS			= 75,
 
-    ERMAK_COMMAND_GET_LOCK                  = 80,
-    ERMAK_COMMAND_SET_LOCK                  = 81,
-    ERMAK_COMMAND_GET_SPLIT                 = 82,
-    ERMAK_COMMAND_GET_EXTD_INFO				= 83,
-    ERMAK_COMMAND_SET_SPLIT_FREQ            = 84,
+    //ERMAK_COMMAND_GET_LOCK                  = 80,
+	ERMAK_COMMAND_SET_LOCK                  = 81,
+    //ERMAK_COMMAND_GET_SPLIT                 = 82,
+    //ERMAK_COMMAND_GET_EXTD_INFO				= 83,
+    //ERMAK_COMMAND_SET_SPLIT_FREQ            = 84,
 
 	//ERMAK_COMMAND_UNSUBCSRIBE				= 125,
 	//ERMAK_COMMAND_SAVE_SETTINGS				= 126,
 	//ERMAK_COMMAND_UNFREEZE_APP  = 127,
 	//ERMAK_COMMAND_GET_BAND = 128
+	
+	ERMAK_COMMAND_GET_FULL_INFO			= 200,
+	
+	ERMAK_COMMAND_LAST_REC = 255
 }ERMAK_COMMAND_t;
 
 
 /* 	Freq + Mode  */
 typedef struct{
-	uint32_t			freq;   // ToDo Type int64
-    int32_t             passband;
+	//uint32_t			freq;   // ToDo Type int64
+    //int32_t             passband;
+	
+    //ERMAK_VFO_MODE_t	vfo;
+	uint16_t			bw;
 	ERMAK_MODE_t		mode;
-    ERMAK_VFO_MODE_t	vfo;
 }ERMAK_FREQ_MODE_DATA_t;
 
 /* 	VFO data  */
@@ -236,8 +242,150 @@ typedef struct{
     ERMAK_VFO_MODE_t	vfo;
 }ERMAK_EXTD_INFO_t;
 
+/* PRINTF("Stackmem:\t%d\n",((uint32_t)msg.fullInfo.stackMem) + 1);*/
+typedef enum {
+	ERMAK_STACK_MEM_1 = 0,
+	ERMAK_STACK_MEM_2,
+	ERMAK_STACK_MEM_3
+}ERMAK_STACK_MEM_t;
+
+/* 	Bands  */
+typedef enum{
+		ERMAK_BAND_160 = 0,
+		ERMAK_BAND_80,
+		ERMAK_BAND_40,
+		ERMAK_BAND_30,
+		ERMAK_BAND_20,
+		ERMAK_BAND_16,
+		ERMAK_BAND_15,
+		ERMAK_BAND_12,
+		ERMAK_BAND_10,
+		ERMAK_BAND_ALL,
+		ERMAK_BAND_6,
+		ERMAK_BAND_60,
+		ERMAK_BAND_CB,
+		ERMAK_BAND_UNDEF
+
+}ERMAK_BAND_t;
+
+typedef struct {
+	uint32_t low;
+	uint32_t high;
+}ERMAK_BAND_EDGE_t;
+
+
+typedef struct{
+	uint32_t vfoA;
+	uint32_t vfoB;
+}ERMAK_VFO_FREQS_t;
+
+typedef enum {
+	ERMAK_RIT_OFF = 0,
+	ERMAK_RIT_ON = 1
+}ERMAK_RIT_t;
+
+typedef enum {
+	ERMAK_XIT_OFF = 0,
+	ERMAK_XIT_ON = 1
+}ERMAK_XIT_t;
+
+typedef struct{
+	ERMAK_RIT_t rit;
+	ERMAK_XIT_t xit;
+}ERMAK_RIT_HIT_INFO_t;
+
+/* 	LNA att  */
+typedef enum{
+	ERMAK_LNA_ATT_OFF = 0,
+	ERMAK_LNA_ON,
+	ERMAK_LNA_ATT_ON_10DB,
+	ERMAK_LNA_ATT_ON_20DB,
+	ERMAK_LNA_ATT_ON_30DB,
+	ERMAK_LNA_ATT_NONE
+}ERMAK_LNA_ATT_t;
+
+typedef enum{
+	ERMAK_RX_FILTER_NONE = 0,
+	ERMAK_RX_FILTER_SSB_N,
+	ERMAK_RX_FILTER_SSB_W,
+	ERMAK_RX_FILTER_CW_N,
+	ERMAK_RX_FILTER_CW_W,
+	ERMAK_RX_FILTER_AMN,
+	ERMAK_RX_FILTER_NFM,
+	ERMAK_RX_FILTER_ADJ,
+	ERMAK_RX_FILTER_CW_ADJ
+}ERMAK_RX_FILTER_t;
+
+typedef enum {
+	ERMAK_APF_OFF = 0,
+	ERMAK_APF_ON = 1
+}ERMAK_APF_t;
+
+/* 	RX filter   */
+typedef struct{
+	uint16_t			bandPassLow;
+	uint16_t			bandPassHigh;
+	ERMAK_RX_FILTER_t	filterType;
+	ERMAK_APF_t			apf;
+}ERMAK_RX_FILTER_SETTINGS_t;
+
+/* 	Mute  */
+typedef enum{
+	ERMAK_AF_MUTE_OFF = 0,
+	ERMAK_AF_MUTE_ON
+}ERMAK_AF_MUTE_t;
+
+/* 	NB */
+typedef struct{
+    uint32_t            run;
+    float				tau;
+    float               hangtime;
+    float               advtime;
+    float               backtau;
+    float               threshold;
+}ERMAK_NOB_t;
+
+/* 	NR */
+typedef struct{
+    int32_t          run;
+    uint32_t         nReduceValue;
+    int32_t          VAD;
+}ERMAK_NR_t;
+
+typedef enum{
+	ERMAK_ANF_OFF = 0,
+	ERMAK_ANF_ON = 1
+}ERMAK_ANF_t;
+
+/* 	AGSW type */
+typedef enum{
+	ERMAK_AGC_TYPE_SLOW = 0,
+	ERMAK_AGC_TYPE_MEDIUM,
+	ERMAK_AGC_TYPE_FAST,
+	ERMAK_AGC_TYPE_USER_1,
+	ERMAK_AGC_TYPE_USER_2,
+	ERMAK_AGC_TYPE_NONE
+}ERMAK_AGC_TYPE_t;
+
+typedef enum{
+	ERMAK_VOX_OFF = 0,
+	ERMAK_VOX_ON = 1
+}ERMAK_VOX_t;
+
+typedef enum{
+	ERMAK_ANT_1 = 0,
+	ERMAK_ANT_2 = 1
+}ERMAK_ANT_t;
+
+/* 	KENWOOD FT command  */
+typedef struct{
+	ERMAK_SPLIT_t 		split;
+	ERMAK_VFO_MODE_t	vfoRx;
+}ERMAK_KENWOOD_FT_t;
+
 
 /* 	Command packet  */
+/*
 typedef struct {
   ERMAK_COMMAND_t command;
   union{
@@ -246,7 +394,7 @@ typedef struct {
     ERMAK_LOCK_t                    lock;
 
 	//ERMAK_BAND_SETTINGS_t  		band;
-	ERMAK_FREQ_MODE_DATA_t			freqModeData;
+	
 
 	//ERMAK_TRANSMIT_t		 		transmit;
 	//ERMAK_AF_MUTE_t		 		mute;
@@ -267,11 +415,11 @@ typedef struct {
 	//ERMAK_RX_FILTER_SETTINGS_t		rxFilterSettings;
 	//ERMAK_RX_FILTER_t				rxFilterList[ERMAK_MAX_RX_FILTER_LIST];
 
-	ERMAK_VFO_DATA_t				vfoData;
+
     ERMAK_EXTD_INFO_t               extdInfo;
 	//ERMAK_VFO_FREQ_t				vfoFreq;
 	//ERMAK_MODE_RX_t				modeRx;
-	ERMAK_TRANSMIT_RX_t				transmittRx;
+	
 	//ERMAK_NOTIFY_TCI_t			notifyTCI;
 
 	//uint8_t						wpm;
@@ -284,13 +432,60 @@ typedef struct {
 	//uint8_t						txPower;
 	//ERMAK_VERSION_t				version;
 	//ERMAK_KENWOOD_IF_t			kenwoodIF;
-	//ERMAK_KENWOOD_FT_t			kenwoodFT;
+	//
 	//ERMAK_SUBSCRIBE_t				subscribe;
-	ERMAK_NOTIFY_TYPE_t			notifyType;
 	//bool							carrierOn;
 	//ERMAK_SERVER_MSG_t			serverMsg;
 	//ERMAK_VFO_FREQS_t				vfoFreqs;
 };
+}ERMAK_MSG_t;
+*/
+
+typedef struct{
+	ERMAK_RX_t				rx;
+	ERMAK_STACK_MEM_t		stackMem;
+	ERMAK_TRANSMIT_t		ptt;
+	ERMAK_BAND_t			band;
+	ERMAK_BAND_EDGE_t		edges;
+	ERMAK_MODE_t			mode;
+	uint32_t				freq;
+	ERMAK_VFO_FREQS_t		vfoFreq;
+	ERMAK_VFO_MODE_t		vfoMode;
+	ERMAK_VFO_MODE_t		vfoRX;
+	ERMAK_VFO_MODE_t		vfoTX;
+	ERMAK_SPLIT_t			split;
+	ERMAK_RIT_HIT_INFO_t	ritXitInfo;
+	ERMAK_LNA_ATT_t			lnaAtt;
+	ERMAK_RX_FILTER_SETTINGS_t	filter;
+	int16_t					rfGain;
+	int16_t					afGain;
+	ERMAK_AF_MUTE_t			afMute;
+	ERMAK_NOB_t				nob;
+	ERMAK_NR_t				nor;
+	ERMAK_ANF_t				anf;
+	ERMAK_AGC_TYPE_t		agc;
+	bool					agcOn;
+	ERMAK_LOCK_t			lock;
+	ERMAK_VOX_t				vox;
+	ERMAK_ANT_t				rxAnt;
+	ERMAK_ANT_t				txAnt;
+}ERMAK_FULL_INFO_t;
+
+
+typedef struct {
+	ERMAK_COMMAND_t command;
+	bool lockOn;
+	union {
+		uint8_t   array[128];
+
+		ERMAK_FULL_INFO_t		fullInfo;
+		ERMAK_VFO_DATA_t		vfoData;
+		ERMAK_FREQ_MODE_DATA_t	freqModeData;
+		ERMAK_TRANSMIT_RX_t		transmittRx;
+		ERMAK_KENWOOD_FT_t		kenwoodFT;
+		
+		ERMAK_NOTIFY_TYPE_t		notifyType;
+	};
 }ERMAK_MSG_t;
 
 void ermak_SendRequest(ERMAK_MSG_t * pMsg);
