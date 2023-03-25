@@ -437,10 +437,8 @@ static void cbRigCTLGetFullInfo(RIGCTL_PARM_t* pParm){
 		PRINTF("Split:\t\t%s\n",msg.fullInfo.split == ERMAK_SPLIT_ON ? "ON":"OFF");
 		PRINTF("\tRx:\t%s\n",msg.fullInfo.vfoRX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB");
 		PRINTF("\tTx:\t%s\n",msg.fullInfo.vfoTX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB");
-		PRINTF("RIT:\t\t%s\n",msg.fullInfo.ritXitInfo.rit == ERMAK_RIT_ON ? "ON":"OFF");
-		// очепятка rit - xit
-		//PRINTF("XIT:\t\t%s\n",msg.fullInfo.ritXitInfo.rit == ERMAK_XIT_ON ? "ON":"OFF");
-		PRINTF("XIT:\t\t%s\n",msg.fullInfo.ritXitInfo.xit == ERMAK_XIT_ON ? "ON":"OFF");
+		PRINTF("RIT:\t\t%s\n",msg.fullInfo.ritXit.rit == ERMAK_RIT_ON ? "ON":"OFF");
+		PRINTF("XIT:\t\t%s\n",msg.fullInfo.ritXit.xit == ERMAK_XIT_ON ? "ON":"OFF");
 		PRINTF("LNA:\t\t%s\n",msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? "ON":"OFF");
 		PRINTF("ATT:\t\t%ddB\n",msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? 0:(-10 * (msg.fullInfo.lnaAtt - 1)));
 		PRINTF("Filter:\t%d\n",msg.fullInfo.filter.filterType);

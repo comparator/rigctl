@@ -20,6 +20,8 @@ static uint32_t         ermak_cfg_freqB = 21074000;
 static uint16_t			ermak_cfg_bp_high = 2800;
 static uint16_t			ermak_cfg_bp_low  = 100;
 
+static ERMAK_RIT_XIT_t	ermak_cfg_rit_xit = {0, ERMAK_RIT_OFF, 0, ERMAK_XIT_OFF};
+
 static bool ermak_chk_vfo(ERMAK_VFO_MODE_t * pVfo)
 {
     if((*pVfo != ERMAK_VFO_MODE_A) && (*pVfo != ERMAK_VFO_MODE_B))
@@ -42,7 +44,7 @@ typedef struct{
 	ERMAK_VFO_MODE_t		vfoRX;
 	ERMAK_VFO_MODE_t		vfoTX;
 	ERMAK_SPLIT_t			split;
-  ERMAK_RIT_HIT_INFO_t     ritXitInfo;
+	ERMAK_RIT_XIT_t			ritXit;
   ERMAK_LNA_ATT_t        lnaAtt;
 	ERMAK_RX_FILTER_SETTINGS_t	filter;
   int16_t            rfGain;
@@ -73,6 +75,7 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 			pMsg->fullInfo.vfoRX		= ermak_cfg_vfo;
 			pMsg->fullInfo.vfoTX		= ermak_cfg_vfoS;
 			pMsg->fullInfo.split		= ermak_cfg_split;
+			pMsg->fullInfo.ritXit		= ermak_cfg_rit_xit;
 			pMsg->fullInfo.filter.bandPassHigh = ermak_cfg_bp_high;
 			pMsg->fullInfo.filter.bandPassLow = ermak_cfg_bp_low;
 			pMsg->fullInfo.lock			= ermak_cfg_lock;
@@ -108,6 +111,14 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 		case ERMAK_COMMAND_SET_SPLIT:
 			ermak_cfg_split = pMsg->kenwoodFT.split;
 			ermak_cfg_vfoS = pMsg->kenwoodFT.vfoRx;
+			break;
+
+		case ERMAK_COMMAND_SET_RIT:
+			ermak_cfg_rit_xit.rit = pMsg->ritXit.rit;
+			break;
+
+		case ERMAK_COMMAND_SET_RIT_FREQ:
+			ermak_cfg_rit_xit.ritFreq = pMsg->ritXit.ritFreq;
 			break;
 /*
         case ERMAK_COMMAND_GET_FREQ_MODE:

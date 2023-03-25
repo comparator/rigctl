@@ -198,12 +198,14 @@ typedef enum{
     //ERMAK_COMMAND_GET_SPLIT                 = 82,
     //ERMAK_COMMAND_GET_EXTD_INFO				= 83,
     //ERMAK_COMMAND_SET_SPLIT_FREQ            = 84,
+	ERMAK_COMMAND_SET_RIT					= 85,
+	ERMAK_COMMAND_SET_RIT_FREQ				= 86,
 
 	//ERMAK_COMMAND_UNSUBCSRIBE				= 125,
 	//ERMAK_COMMAND_SAVE_SETTINGS				= 126,
 	//ERMAK_COMMAND_UNFREEZE_APP  = 127,
 	//ERMAK_COMMAND_GET_BAND = 128
-	
+
 	ERMAK_COMMAND_GET_FULL_INFO			= 200,
 	
 	ERMAK_COMMAND_LAST_REC = 255
@@ -290,9 +292,11 @@ typedef enum {
 }ERMAK_XIT_t;
 
 typedef struct{
+	int32_t		ritFreq;
 	ERMAK_RIT_t rit;
+	int32_t		xitFreq;
 	ERMAK_XIT_t xit;
-}ERMAK_RIT_HIT_INFO_t;
+}ERMAK_RIT_XIT_t;
 
 /* 	LNA att  */
 typedef enum{
@@ -383,7 +387,6 @@ typedef struct{
 	ERMAK_VFO_MODE_t	vfoRx;
 }ERMAK_KENWOOD_FT_t;
 
-
 /* 	Command packet  */
 /*
 typedef struct {
@@ -431,7 +434,7 @@ typedef struct {
 	//ERMAK_CW_MACROS_STR_t			cwMacrosStr;
 	//uint8_t						txPower;
 	//ERMAK_VERSION_t				version;
-	//ERMAK_KENWOOD_IF_t			kenwoodIF;
+			//ERMAK_KENWOOD_IF_t			kenwoodIF;
 	//
 	//ERMAK_SUBSCRIBE_t				subscribe;
 	//bool							carrierOn;
@@ -454,7 +457,7 @@ typedef struct{
 	ERMAK_VFO_MODE_t		vfoRX;
 	ERMAK_VFO_MODE_t		vfoTX;
 	ERMAK_SPLIT_t			split;
-	ERMAK_RIT_HIT_INFO_t	ritXitInfo;
+	ERMAK_RIT_XIT_t			ritXit;
 	ERMAK_LNA_ATT_t			lnaAtt;
 	ERMAK_RX_FILTER_SETTINGS_t	filter;
 	int16_t					rfGain;
@@ -478,13 +481,14 @@ typedef struct {
 	union {
 		uint8_t   array[128];
 
-		ERMAK_FULL_INFO_t		fullInfo;
-		ERMAK_VFO_DATA_t		vfoData;
-		ERMAK_FREQ_MODE_DATA_t	freqModeData;
-		ERMAK_TRANSMIT_RX_t		transmittRx;
-		ERMAK_KENWOOD_FT_t		kenwoodFT;
-		
-		ERMAK_NOTIFY_TYPE_t		notifyType;
+		ERMAK_FULL_INFO_t			fullInfo;
+		ERMAK_VFO_DATA_t			vfoData;
+		ERMAK_FREQ_MODE_DATA_t		freqModeData;
+		ERMAK_TRANSMIT_RX_t			transmittRx;
+		ERMAK_KENWOOD_FT_t			kenwoodFT;
+		ERMAK_RIT_XIT_t				ritXit;
+
+		ERMAK_NOTIFY_TYPE_t			notifyType;
 	};
 }ERMAK_MSG_t;
 
