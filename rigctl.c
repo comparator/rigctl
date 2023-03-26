@@ -21,6 +21,7 @@
 #define SEND_REQUEST_TO_ERMAK(x)    ermak_SendRequest(&x)
 
 #define RIGTCL(c, x)        {.command = c, .cb = x}
+#define RIGFUNC(c, g, s)	{.cmd = c, .cbGet = g, .cbSet = s}
 
 /************************************************************
  * Typedef                            						*
@@ -35,6 +36,18 @@ typedef struct RIGCTL_COMMAND_t {
 	char* command;
 	cbRigCtl cb;
 } RIGCTL_COMMAND_t;
+
+/* Функции */
+
+typedef void(*cbRigFuncGet_t)(void);
+typedef void(*cbRigFuncSet_t)(uint8_t parm);
+
+typedef struct {
+	char*			cmd;
+	cbRigFuncGet_t	cbGet;
+	cbRigFuncSet_t	cbSet;
+}RIGCTL_FUNC_t;
+
 
 /************************************************************
  * Explicit External Declarations                            *
@@ -86,8 +99,20 @@ static void cbRigCTLGetRit(RIGCTL_PARM_t* pParm);
 static void cbRigCTLSetXit(RIGCTL_PARM_t* pParm);
 static void cbRigCTLGetXit(RIGCTL_PARM_t* pParm);
 
+static void cbRigCTLSetFunc(RIGCTL_PARM_t* pParm);
+static void cbRigCTLGetFunc(RIGCTL_PARM_t* pParm);
+
 static void cbRigCTLGetFullInfo(RIGCTL_PARM_t* pParm);
 static inline void requestFullInfo(void);
+
+/* Коллбэки для функций */
+
+static void cbRigFuncGetRit(void);
+static void cbRigFuncSetRit(uint8_t parm);
+static void cbRigFuncGetXit(void);
+static void cbRigFuncSetXit(uint8_t parm);
+
+
 
 static RIGCTL_COMMAND_t _rigctlCommands[] = {
 		RIGTCL("\\chk_vfo",			cbRigCTLChkVFO),
@@ -116,7 +141,12 @@ static RIGCTL_COMMAND_t _rigctlCommands[] = {
 		RIGTCL("\\get_rit",			cbRigCTLGetRit),
 		RIGTCL("\\set_xit",			cbRigCTLSetXit),
 		RIGTCL("\\get_xit",			cbRigCTLGetXit),
+		RIGTCL("\\set_func",		cbRigCTLSetFunc),
+		RIGTCL("\\get_func",		cbRigCTLGetFunc),
+		//RIGTCL("\\get_dcd",			cbRigCTLGetDCD),
+
 		RIGTCL("\\f",				cbRigCTLGetFullInfo),
+		
 		RIGTCL("\xf0",				cbRigCTLChkVFO),
 		RIGTCL("\xf3",				cbRigCTLGetVFOinfo),
 		RIGTCL("\x88",				cbRigCTLGetPowerState),
@@ -140,8 +170,48 @@ static RIGCTL_COMMAND_t _rigctlCommands[] = {
 		RIGTCL("j",					cbRigCTLGetRit),
 		RIGTCL("Z",					cbRigCTLSetXit),
 		RIGTCL("z",					cbRigCTLGetXit),
+		RIGTCL("U",					cbRigCTLSetFunc),
+		RIGTCL("u",					cbRigCTLGetFunc),
+		//RIGTCL("\x0b",				cbRigCTLGetDCD),
 
 		RIGTCL(NULL, 	NULL)
+};
+
+static RIGCTL_FUNC_t _rigctlFunc[] = {
+	RIGFUNC("FAGC",			NULL, NULL),
+	RIGFUNC("NB",			NULL, NULL),
+	RIGFUNC("COMP",			NULL, NULL),
+	RIGFUNC("VOX",			NULL, NULL),
+	RIGFUNC("TONE",			NULL, NULL),
+	RIGFUNC("TSQL",			NULL, NULL),
+	RIGFUNC("SBKIN",		NULL, NULL),
+	RIGFUNC("FBKIN",		NULL, NULL),
+	RIGFUNC("ANF",			NULL, NULL),
+	RIGFUNC("NR",			NULL, NULL),
+	RIGFUNC("AIP",			NULL, NULL),
+	RIGFUNC("APF",			NULL, NULL),
+	RIGFUNC("MON",			NULL, NULL),
+	RIGFUNC("MN",			NULL, NULL),
+	RIGFUNC("RF",			NULL, NULL),
+	RIGFUNC("ARO",			NULL, NULL),
+	RIGFUNC("LOCK",			NULL, NULL),
+	RIGFUNC("MUTE",			NULL, NULL),
+	RIGFUNC("VSC",			NULL, NULL),
+	RIGFUNC("REV",			NULL, NULL),
+	RIGFUNC("SQL",			NULL, NULL),
+	RIGFUNC("ABM",			NULL, NULL),
+	RIGFUNC("BC",			NULL, NULL),
+	RIGFUNC("MBC",			NULL, NULL),
+	RIGFUNC("RIT",			cbRigFuncGetRit, cbRigFuncSetRit),
+	RIGFUNC("AFC",			NULL, NULL),
+	RIGFUNC("SATMODE",		NULL, NULL),
+	RIGFUNC("SCOPE",		NULL, NULL),
+	RIGFUNC("RESUME",		NULL, NULL),
+	RIGFUNC("TBURST",		NULL, NULL),
+	RIGFUNC("TUNER",		NULL, NULL),
+	RIGFUNC("XIT",			cbRigFuncGetXit, cbRigFuncSetXit),
+
+	RIGFUNC(NULL, NULL, NULL)
 };
 
 
@@ -782,6 +852,132 @@ static void cbRigCTLGetXit(RIGCTL_PARM_t* pParm) {
 }
 
 
+/* Функции */
+
+static void cbRigFuncGetRit(void) {
+	requestFullInfo();
+	char rit = (msg.fullInfo.ritXit.rit == ERMAK_RIT_OFF) ? '0' : '1';
+	if (longReply) {
+		snprintf(strReply, sizeof(strReply), "Func Status: %c\n", rit);
+	} else {
+		snprintf(strReply, sizeof(strReply), "%c\n", rit);
+	}
+}
+
+static void cbRigFuncSetRit(uint8_t parm) {
+	ERMAK_RIT_t rit = ERMAK_RIT_OFF;
+	if (parm == 1)
+		rit = ERMAK_RIT_ON;
+
+	msg.command = ERMAK_COMMAND_SET_RIT;
+	msg.ritXit.rit = rit;
+	SEND_REQUEST_TO_ERMAK(msg);
+
+	sendRprt = RIG_OK;
+}
+
+static void cbRigFuncGetXit(void) {
+	requestFullInfo();
+	char xit = (msg.fullInfo.ritXit.xit == ERMAK_XIT_OFF) ? '0' : '1';
+	if (longReply) {
+		snprintf(strReply, sizeof(strReply), "Func Status: %c\n", xit);
+	} else {
+		snprintf(strReply, sizeof(strReply), "%c\n", xit);
+	}
+}
+
+static void cbRigFuncSetXit(uint8_t parm) {
+	ERMAK_XIT_t xit = ERMAK_XIT_OFF;
+	if (parm == 1)
+		xit = ERMAK_XIT_ON;
+
+	msg.command = ERMAK_COMMAND_SET_XIT;
+	msg.ritXit.xit = xit;
+	SEND_REQUEST_TO_ERMAK(msg);
+
+	sendRprt = RIG_OK;
+}
+
+
+
+static void cbRigCTLSetFunc(RIGCTL_PARM_t* pParm) {
+	if (pParm->parm[0] == NULL) {
+		sendRprt = RIG_EINVAL;
+		return;
+	} else if (*pParm->parm[0] == '?') {		/* Get Implemented Functions List */
+		RIGCTL_FUNC_t * funkList;
+		int i = 0;
+		do {
+			funkList = &_rigctlFunc[i++];
+			if (funkList->cbSet != NULL) {
+				strcat(strReply, " ");
+				strcat(strReply, funkList->cmd);
+			}
+		}while (funkList->cmd != NULL);
+		strcat(strReply, "\n");
+	} else {
+		RIGCTL_FUNC_t * funkList;
+		int i = 0;
+		funkList = &_rigctlFunc[i++];
+		while (funkList->cmd != NULL) {
+			if (strcmp(funkList->cmd, pParm->parm[0]) == 0) {
+				if (funkList->cbSet != NULL){
+					uint8_t parm = 0;
+					if(pParm->parm[1] != NULL)
+						parm = atoi(pParm->parm[1]);
+					funkList->cbSet(parm);
+				}
+				return;
+			}
+			funkList = &_rigctlFunc[i++];
+		}
+
+		LOG_ERRCMD(pParm->parm[0]);
+		sendRprt =  RIG_ENAVAIL;
+	}
+}
+
+static void cbRigCTLGetFunc(RIGCTL_PARM_t* pParm) {
+	if (pParm->parm[0] == NULL) {
+		sendRprt = RIG_EINVAL;
+		return;
+	} else if (*pParm->parm[0] == '?') {		/* Get Implemented Functions List */
+		if (longReply) {
+			strcat(strReply, "Func Status: ");
+		}
+
+		RIGCTL_FUNC_t * funkList;
+		int i = 0;
+		do {
+			funkList = &_rigctlFunc[i++];
+			if (funkList->cbGet != NULL) {
+				strcat(strReply, " ");
+				strcat(strReply, funkList->cmd);
+			}
+		}while (funkList->cmd != NULL);
+		strcat(strReply, "\n");
+	} else {
+		RIGCTL_FUNC_t * funkList;
+		int i = 0;
+		funkList = &_rigctlFunc[i++];
+		while (funkList->cmd != NULL) {
+			if (strcmp(funkList->cmd, pParm->parm[0]) == 0) {
+				if (funkList->cbGet != NULL){
+					funkList->cbGet();
+				}
+				return;
+			}
+			funkList = &_rigctlFunc[i++];
+		}
+
+		LOG_ERRCMD(pParm->parm[0]);
+		sendRprt =  RIG_ENAVAIL;
+	}
+}
+
+
+
+/* API */
 
 static int rigctl_parse_in(char *pBuf)
 {
