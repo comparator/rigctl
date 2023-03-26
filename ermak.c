@@ -120,6 +120,14 @@ void ermak_SendRequest(ERMAK_MSG_t * pMsg)
 		case ERMAK_COMMAND_SET_RIT_FREQ:
 			ermak_cfg_rit_xit.ritFreq = pMsg->ritXit.ritFreq;
 			break;
+
+		case ERMAK_COMMAND_SET_XIT:
+			ermak_cfg_rit_xit.xit = pMsg->ritXit.xit;
+			break;
+
+		case ERMAK_COMMAND_SET_XIT_FREQ:
+			ermak_cfg_rit_xit.xitFreq = pMsg->ritXit.xitFreq;
+			break;
 /*
         case ERMAK_COMMAND_GET_FREQ_MODE:
             if(ermak_cfg_vfo == ERMAK_VFO_MODE_A)

@@ -81,6 +81,11 @@ static void cbRigCTLSetSplitMode(RIGCTL_PARM_t* pParm);
 static void cbRigCTLGetSplitFreq(RIGCTL_PARM_t* pParm);
 static void cbRigCTLSetSplitFreq(RIGCTL_PARM_t* pParm);
 
+static void cbRigCTLSetRit(RIGCTL_PARM_t* pParm);
+static void cbRigCTLGetRit(RIGCTL_PARM_t* pParm);
+static void cbRigCTLSetXit(RIGCTL_PARM_t* pParm);
+static void cbRigCTLGetXit(RIGCTL_PARM_t* pParm);
+
 static void cbRigCTLGetFullInfo(RIGCTL_PARM_t* pParm);
 static inline void requestFullInfo(void);
 
@@ -107,6 +112,10 @@ static RIGCTL_COMMAND_t _rigctlCommands[] = {
 		RIGTCL("\\set_split_mode",	cbRigCTLSetSplitMode),
 		RIGTCL("\\get_split_freq",	cbRigCTLGetSplitFreq),
 		RIGTCL("\\set_split_freq",	cbRigCTLSetSplitFreq),
+		RIGTCL("\\set_rit",			cbRigCTLSetRit),
+		RIGTCL("\\get_rit",			cbRigCTLGetRit),
+		RIGTCL("\\set_xit",			cbRigCTLSetXit),
+		RIGTCL("\\get_xit",			cbRigCTLGetXit),
 		RIGTCL("\\f",				cbRigCTLGetFullInfo),
 		RIGTCL("\xf0",				cbRigCTLChkVFO),
 		RIGTCL("\xf3",				cbRigCTLGetVFOinfo),
@@ -127,6 +136,10 @@ static RIGCTL_COMMAND_t _rigctlCommands[] = {
 		RIGTCL("X",					cbRigCTLSetSplitMode),
 		RIGTCL("i",					cbRigCTLGetSplitFreq),
 		RIGTCL("I",					cbRigCTLSetSplitFreq),
+		RIGTCL("J",					cbRigCTLSetRit),
+		RIGTCL("j",					cbRigCTLGetRit),
+		RIGTCL("Z",					cbRigCTLSetXit),
+		RIGTCL("z",					cbRigCTLGetXit),
 
 		RIGTCL(NULL, 	NULL)
 };
@@ -712,10 +725,62 @@ static void cbRigCTLSetSplitFreq(RIGCTL_PARM_t* pParm) {
 	msg.vfoData.freq = freq;
 	SEND_REQUEST_TO_ERMAK(msg);
 
-
 	sendRprt = RIG_OK;
 	NotifyWEBRemote(ERMAK_NOTIFY_TYPE_WEB_ALL);
 }
+
+// Только устанавливает RIT частоту, не активирует
+static void cbRigCTLSetRit(RIGCTL_PARM_t* pParm) {
+	int32_t freq;
+	if (pParm->parm[0] == NULL) {
+		sendRprt = RIG_EINVAL;
+		return;
+	} else {
+		// ToDo Check min - max
+		freq = atoi(pParm->parm[0]);
+	}
+
+	msg.command = ERMAK_COMMAND_SET_RIT_FREQ;
+	msg.ritXit.ritFreq = freq;
+	SEND_REQUEST_TO_ERMAK(msg);
+
+	sendRprt = RIG_OK;
+}
+
+static void cbRigCTLGetRit(RIGCTL_PARM_t* pParm) {
+	requestFullInfo();
+	if (longReply)
+		snprintf(strReply, sizeof(strReply), "RIT: %d\n", msg.fullInfo.ritXit.ritFreq);
+	else
+		snprintf(strReply, sizeof(strReply), "%d\n", msg.fullInfo.ritXit.ritFreq);
+}
+
+// Только устанавливает XIT частоту, не активирует
+static void cbRigCTLSetXit(RIGCTL_PARM_t* pParm) {
+	int32_t freq;
+	if (pParm->parm[0] == NULL) {
+		sendRprt = RIG_EINVAL;
+		return;
+	} else {
+		// ToDo Check min - max
+		freq = atoi(pParm->parm[0]);
+	}
+
+	msg.command = ERMAK_COMMAND_SET_XIT_FREQ;
+	msg.ritXit.xitFreq = freq;
+	SEND_REQUEST_TO_ERMAK(msg);
+
+	sendRprt = RIG_OK;
+}
+
+static void cbRigCTLGetXit(RIGCTL_PARM_t* pParm) {
+	requestFullInfo();
+	if (longReply)
+		snprintf(strReply, sizeof(strReply), "XIT: %d\n", msg.fullInfo.ritXit.xitFreq);
+	else
+		snprintf(strReply, sizeof(strReply), "%d\n", msg.fullInfo.ritXit.xitFreq);
+}
+
 
 
 static int rigctl_parse_in(char *pBuf)

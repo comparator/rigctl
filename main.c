@@ -56,9 +56,6 @@ int main(int argc, char *argv[]) {
   if(net_start_listen(&config) < 0)
     exit(EXIT_FAILURE);
 
-  if(commcat_config(&config) < 0)
-      exit(EXIT_FAILURE);
-
   int run = 1;
   while (run >= 0) {
       run = net_poll();
