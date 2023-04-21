@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "log.h"
 #include "config.h"
 #include "network.h"
 
@@ -138,13 +139,13 @@ static void receive_from_peer(int idx)
     }
     else if (rc == 0)   /* connection closed by the client */
     {
-        printf("  Connection closed by the client\n");
+        log_info( "  Connection closed by the client");
         close_conn = true;
     }
 
     if (close_conn)
     {
-        printf("  Connection closed by the server\n");
+        log_info( "  Connection closed by the server");
 
         close(sock);
         net_fds[idx].fd = NO_SOCKET;
@@ -201,7 +202,7 @@ static int start_listen_socket(int port)
         return NO_SOCKET;
     }
 
-    printf("Accepting connections on port %d\n", port);
+    log_info( "Accepting connections on port %d", port);
 
     net_fds[net_nfds].fd = listen_sd;
     net_fds[net_nfds++].events = POLLIN;
@@ -229,11 +230,11 @@ static int handle_new_connection(int in_socket, char chn)
     char client_ipv4_str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &client_addr.sin_addr, client_ipv4_str, INET_ADDRSTRLEN);
 
-    fprintf(stdout, "Incoming connection from %s:%d.\n", client_ipv4_str, client_addr.sin_port);
+    log_info( "New Connection from %s:%d", client_ipv4_str, client_addr.sin_port);
 
     if(net_nfds >= MAX_CLIENT_CONNECTIONS)
     {
-        fprintf(stderr, "There is too much connections. Close new connection.\n");
+        log_error( "There is too much connections. Close new connection.");
         close(new_client_sock);
         return 0;
     }
@@ -296,7 +297,7 @@ int net_start_listen(CONFIG_t *pConfig)
             return -1;
       
         }
-  }
+    }
 }
 
 int net_poll(void)
@@ -321,7 +322,7 @@ int net_poll(void)
 
         if(net_fds[i].revents != POLLIN)
         {
-            fprintf(stderr, "Error! revents = %d\n", net_fds[i].revents);
+            log_error( "Error! revents = %d", net_fds[i].revents);
 
             if(net_fds[i].fd != NO_SOCKET)
             {
@@ -334,7 +335,7 @@ int net_poll(void)
 
         if (net_fds[i].fd == socket_rigctl)
         {
-            printf("  Listening socket is readable RigCTL\n");
+            log_info( "New RigCTL connection");
             if(handle_new_connection(socket_rigctl, 1) < 0)
             {
                 return -1;
@@ -342,7 +343,7 @@ int net_poll(void)
         }
         else if (net_fds[i].fd == socket_comm)
         {
-            printf("  Listening socket is readable COMM\n");
+            log_info( "New COMM connection");
             if(handle_new_connection(socket_comm, 2) < 0)
             {
                 return -1;

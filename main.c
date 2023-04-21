@@ -3,6 +3,7 @@
 #include <signal.h>
 
 #include "config.h"
+#include "log.h"
 #include "network.h"
 #include "commcat.h"
 
@@ -12,18 +13,18 @@ void shutdown_srv(int code)
 {
     net_close_sockets();
 
-    fprintf(stdout, "Shutdown server\n");
+    log_info( "Shutdown server");
     exit(code);
 }
 
 void handle_signal_action(int sig_number)
 {
   if (sig_number == SIGINT) {
-    fprintf(stdout, "\nSIGINT was catched!\n");
+    log_info( "SIGINT");
     shutdown_srv(EXIT_SUCCESS);
   }
   else if (sig_number == SIGPIPE) {
-    fprintf(stdout, "\nSIGPIPE was catched!\n");
+    log_info( "SIGPIPE");
     shutdown_srv(EXIT_SUCCESS);
   }
 }
@@ -33,11 +34,11 @@ int setup_signals()
   struct sigaction sa;
   sa.sa_handler = handle_signal_action;
   if (sigaction(SIGINT, &sa, 0) != 0) {
-    fprintf(stderr, "SIGINT sigaction()");
+    log_error( "SIGINT sigaction()");
     return -1;
   }
   if (sigaction(SIGPIPE, &sa, 0) != 0) {
-    fprintf(stderr, "SIGPIPE sigaction()");
+    log_error( "SIGPIPE sigaction()");
     return -1;
   }
 
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
   }
 
   net_close_sockets();
-  fprintf(stdout, "Abnormal Shutdown server\n");
+  log_info( "Abnormal Shutdown server");
   exit(EXIT_FAILURE);
 
   return 0;

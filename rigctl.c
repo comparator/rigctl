@@ -7,14 +7,12 @@
 #include "ermak.h"
 #include "dump_state.h"
 #include "rigctl.h"
+#include "log.h"
 
 
-//#define LOG_REQUEST(x)      fprintf(stdout, "RQ:%s\n", x)
-//#define LOG_RESPONSE(x)     fprintf(stdout, "RSP:\n%s", x)
-#define LOG_REQUEST(x)
-#define LOG_RESPONSE(x)
-#define LOG_ERRCMD(x)		fprintf(stderr, "cmd '%s' not found\n", x)
-#define PRINTF				printf
+#define LOG_REQUEST(x)      log_trace("RQ: %s", x)
+#define LOG_RESPONSE(x)     log_trace("RA: %s", x)
+#define LOG_ERRCMD(x)       log_error("cmd '%s' not found\n", x)
 
 #define BUF_TX_LEN      (1426)       // TCP Header 54 Bytes, Paket Size = 1480, Ok for All network
 
@@ -505,43 +503,74 @@ static void cbRigCTLGetFullInfo(RIGCTL_PARM_t* pParm){
 
 	SEND_REQUEST_TO_ERMAK(msg);
 
-	PRINTF("\n");
+#define FULL_INFO_STR \
+"Full Info\n" \
+"  Rx:\t\t%s\n" \
+"  Ptt:\t\t%s\n" \
+"  Stackmem:\t%d\n" \
+"  Band:\t\t%d\n" \
+"  Freq:\t\t%dHz\n" \
+"  Edges:\t%d - %d Hz\n" \
+"  Mode:\t\t%s\n" \
+"  VFOA:\t\t%dHz\n" \
+"  VFOB:\t\t%dHz\n" \
+"  VFO mode:\t%s\n" \
+"  Split:\t%s\n" \
+"  Rx:\t%s\n" \
+"  Tx:\t%s\n" \
+"  RIT:\t\t%s\n" \
+"  XIT:\t\t%s\n" \
+"  LNA:\t\t%s\n" \
+"  ATT:\t\t%ddB\n" \
+"  Filter:\t%d\n" \
+"  BW:\t\t%d\n" \
+"  APF:\t\t%s\n" \
+"  RF gain:\t%ddB\n" \
+"  AF gain:\t%ddB\n" \
+"  AF mute:\t%s\n" \
+"  NB:\t\t%s\n" \
+"  NR:\t\t%s\n" \
+"  ANF:\t\t%s\n" \
+"  AGC:\t\t%d\n" \
+"  AGC type:\t%s\n" \
+"  Lock:\t\t%s\n" \
+"  VOX:\t\t%s\n" \
+"  RX ant:\t%s\n" \
+"  TX ant:\t%s\n"
 
-		PRINTF("Rx:\t\t%s\n", msg.fullInfo.rx == ERMAK_RX_MAIN ? "RX_MAIN":"RX_SUB");
-		PRINTF("Ptt:\t\t%s\n",msg.fullInfo.ptt == ERMAK_TRANSMIT_ON ? "TX_MODE":"RX_MODE");
-		PRINTF("Stackmem:\t%d\n",((uint32_t)msg.fullInfo.stackMem) + 1);
-		PRINTF("Band:\t\t%d\n",(uint32_t)msg.fullInfo.band);
-		PRINTF("Freq:\t\t%dHz\n",(uint32_t)msg.fullInfo.freq);
-		PRINTF("Edges:\t\t%dHz-%dHz\n",msg.fullInfo.edges.low,msg.fullInfo.edges.high);
-		PRINTF("Mode:\t\t%s\n",rigctl_cvtMode2Str(msg.fullInfo.mode));
-		PRINTF("VFOA:\t\t%dHz\n",msg.fullInfo.vfoFreq.vfoA);
-		PRINTF("VFOB:\t\t%dHz\n",msg.fullInfo.vfoFreq.vfoB);
-		PRINTF("VFO mode:\t%s\n",msg.fullInfo.vfoMode == ERMAK_VFO_MODE_A ? "VFOA":"VFOB");
-		PRINTF("Split:\t\t%s\n",msg.fullInfo.split == ERMAK_SPLIT_ON ? "ON":"OFF");
-		PRINTF("\tRx:\t%s\n",msg.fullInfo.vfoRX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB");
-		PRINTF("\tTx:\t%s\n",msg.fullInfo.vfoTX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB");
-		PRINTF("RIT:\t\t%s\n",msg.fullInfo.ritXit.rit == ERMAK_RIT_ON ? "ON":"OFF");
-		PRINTF("XIT:\t\t%s\n",msg.fullInfo.ritXit.xit == ERMAK_XIT_ON ? "ON":"OFF");
-		PRINTF("LNA:\t\t%s\n",msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? "ON":"OFF");
-		PRINTF("ATT:\t\t%ddB\n",msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? 0:(-10 * (msg.fullInfo.lnaAtt - 1)));
-		PRINTF("Filter:\t%d\n",msg.fullInfo.filter.filterType);
-		PRINTF("BW:\t\t%d\n",msg.fullInfo.filter.bandPassHigh - msg.fullInfo.filter.bandPassLow);
-		PRINTF("APF:\t\t%s\n",msg.fullInfo.filter.apf == ERMAK_APF_ON ? "ON":"OFF");
-		PRINTF("RF gain:\t%ddB\n",msg.fullInfo.rfGain);
-		PRINTF("AF gain:\t%ddB\n",msg.fullInfo.afGain);
-		PRINTF("AF mute:\t%s\n",msg.fullInfo.afMute == ERMAK_AF_MUTE_ON ? "MUTED":"UNMUTED");
-		PRINTF("NB:\t\t%s\n",msg.fullInfo.nob.run == true ? "ON":"OFF");
-		PRINTF("NR:\t\t%s\n",msg.fullInfo.nor.run == true ? "ON":"OFF");
-		PRINTF("ANF:\t\t%s\n",msg.fullInfo.anf == ERMAK_ANF_ON ? "ON":"OFF");
-		PRINTF("AGC:\t\t%d\n",msg.fullInfo.agc );
-		PRINTF("AGC type:\t%s\n",msg.fullInfo.agcOn == true ? "ON":"OFF" );
-		PRINTF("Lock:\t\t%s\n",msg.fullInfo.lock == ERMAK_LOCK_ON  ? "ON":"OFF");
-		PRINTF("VOX:\t\t%s\n",msg.fullInfo.vox == ERMAK_VOX_ON  ? "ON":"OFF");
-		PRINTF("RX ant:\t\t%s\n",msg.fullInfo.rxAnt == ERMAK_ANT_1  ? "1":"2");
-		PRINTF("TX ant:\t\t%s\n",msg.fullInfo.txAnt == ERMAK_ANT_1  ? "1":"2");
-
-	PRINTF("\n");
-
+    snprintf(strReply, sizeof(strReply), FULL_INFO_STR,
+        msg.fullInfo.rx == ERMAK_RX_MAIN ? "RX_MAIN":"RX_SUB",
+        msg.fullInfo.ptt == ERMAK_TRANSMIT_ON ? "TX_MODE":"RX_MODE",
+        ((uint32_t)msg.fullInfo.stackMem) + 1,
+        (uint32_t)msg.fullInfo.band,
+        (uint32_t)msg.fullInfo.freq,
+        msg.fullInfo.edges.low,msg.fullInfo.edges.high,
+        rigctl_cvtMode2Str(msg.fullInfo.mode),
+        msg.fullInfo.vfoFreq.vfoA,
+        msg.fullInfo.vfoFreq.vfoB,
+        msg.fullInfo.vfoMode == ERMAK_VFO_MODE_A ? "VFOA":"VFOB",
+        msg.fullInfo.split == ERMAK_SPLIT_ON ? "ON":"OFF",
+        msg.fullInfo.vfoRX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB",
+        msg.fullInfo.vfoTX == ERMAK_VFO_MODE_A ? "VFOA":"VFOB",
+        msg.fullInfo.ritXit.rit == ERMAK_RIT_ON ? "ON":"OFF",
+        msg.fullInfo.ritXit.xit == ERMAK_XIT_ON ? "ON":"OFF",
+        msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? "ON":"OFF",
+        msg.fullInfo.lnaAtt == ERMAK_LNA_ON ? 0:(-10 * (msg.fullInfo.lnaAtt - 1)),
+        msg.fullInfo.filter.filterType,
+        msg.fullInfo.filter.bandPassHigh - msg.fullInfo.filter.bandPassLow,
+        msg.fullInfo.filter.apf == ERMAK_APF_ON ? "ON":"OFF",
+        msg.fullInfo.rfGain,
+        msg.fullInfo.afGain,
+        msg.fullInfo.afMute == ERMAK_AF_MUTE_ON ? "MUTED":"UNMUTED",
+        msg.fullInfo.nob.run == true ? "ON":"OFF",
+        msg.fullInfo.nor.run == true ? "ON":"OFF",
+        msg.fullInfo.anf == ERMAK_ANF_ON ? "ON":"OFF",
+        msg.fullInfo.agc,
+        msg.fullInfo.agcOn == true ? "ON":"OFF",
+        msg.fullInfo.lock == ERMAK_LOCK_ON  ? "ON":"OFF",
+        msg.fullInfo.vox == ERMAK_VOX_ON  ? "ON":"OFF",
+        msg.fullInfo.rxAnt == ERMAK_ANT_1  ? "1":"2",
+        msg.fullInfo.txAnt == ERMAK_ANT_1  ? "1":"2");
 }
 
 /**
@@ -672,6 +701,7 @@ static void cbRigCTLSetPTT(RIGCTL_PARM_t* pParm) {
 		else
 			msg.transmittRx.transmitt = ERMAK_TRANSMIT_OFF;
 	} else {
+        sendRprt =  RIG_EINVAL;
 		return;
 	}
 

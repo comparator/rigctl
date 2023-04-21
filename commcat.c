@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "config.h"
+#include "log.h"
+
 #include "ermak.h"
 #include "commcat.h"
 
@@ -46,10 +47,47 @@ static uint16_t commcat_rd_menu(uint8_t idx);
 static inline void requestFullInfo(void);
 
 
+static void cbReqAI(char *pStr);    // Sets or reads the Auto Information (AI) function ON/ OFF
+static void cbReqAG0(char *pStr);   // Sets or reads the AF gain
+static void cbReqFA(char *pStr);    // + Sets or reads the VFO A frequency
+static void cbReqFB(char *pStr);    // + Sets or reads the VFO B frequency
+static void cbReqFR(char *pStr);    // + Selects or reads the VFO or Memory channel
+static void cbReqFT(char *pStr);    // + Selects or reads the VFO or Memory channel
+// GT
+static void cbReqID(char *pStr);    // Reads the transceiver ID number
+static void cbReqIF(char *pStr);    // + Reads the transceiver status
+static void cbReqKS(char *pStr);    // Sets and reads the Keying speed
+// KY
+static void cbReqMD(char *pStr);    // + Sets and reads the operating mode status
+static void cbReqNB(char *pStr);    // Sets and reads the Noise Blanker function status
+static void cbReqPC(char *pStr);    // Sets and reads the output power
+// PT
+// RC
+static void cbReqRD(char *pStr);    // + Sets and reads the RIT/XIT frequency Down
+static void cbReqRT(char *pStr);	// + Sets and reads the RIT function status.
+static void cbReqRU(char *pStr);    // + Sets and reads the RIT/XIT frequency Up
+static void cbReqRX(char *pStr);    // Sets the receiver function status
+// SH
+// SL
+static void cbReqSM(char *pStr);    // Reads the S-meter value
+static void cbReqTX(char *pStr);    // Sets the transmission mode
+static void cbReqXT(char *pStr);	// + Sets and reads the XIT function status.
+
+
+/* Flex Coomands */ 
+static void cbReqZZAG(char *pStr);  // Sets or reads VFO A Audio Gain
+static void cbReqZZFA(char *pStr);  // Sets or reads VFO A Frequency
+static void cbReqZZFB(char *pStr);  // Sets or reads VFO B Frequency
+/*
+2023-04-02 11:20:30 WARN  commcat.c:1059: C UNK: 'ZZMU'
+2023-04-02 11:20:30 WARN  commcat.c:1059: C UNK: 'ZZSW'
+2023-04-02 11:20:30 WARN  commcat.c:1059: C UNK: 'ZZIF'
+*/
+
+
+/*
 static void cbReq00(char *pStr);    // No Info
 static void cbReqAC(char *pStr);    // Sets or reads the internal antenna tuner status.
-static void cbReqAG(char *pStr);    // Sets or reads the AF gain
-static void cbReqAI(char *pStr);    // Sets or reads the Auto Information (AI) function ON/ OFF
 static void cbReqAN(char *pStr);    // Selects the antenna connector ANT1/ ANT2
 static void cbReqBC(char *pStr);    // Sets or reads the Beat Cancel function status
 static void cbReqBP(char *pStr);    // Adjusts the Notch Frequency of the Manual Notch Filter.
@@ -62,53 +100,37 @@ static void cbReqCT(char *pStr);    // Sets and reads the CTCSS function status
 static void cbReqDA(char *pStr);    // Sets and reads the DATA mode
 // ES Sets or reads the Advanced startup option, (supported from the firmware version 1.08
 static void cbReqEX(char *pStr);    // Sets or reads the Menu.
-static void cbReqFA(char *pStr);    // + Sets or reads the VFO A frequency
-static void cbReqFB(char *pStr);    // + Sets or reads the VFO B frequency
 static void cbReqFL(char *pStr);    // Sets and reads the IF filter
-static void cbReqFR(char *pStr);    // + Selects or reads the VFO or Memory channel
 static void cbReqFS(char *pStr);    // Sets and reads the Fine Tuning function status
-static void cbReqFT(char *pStr);    // + Selects or reads the VFO or Memory channel
 static void cbReqFV(char *pStr);    // Verifies the Firmware version
 static void cbReqFW(char *pStr);    // Sets or reads the DSP filtering bandwidth.
 static void cbReqGC(char *pStr);    // Sets or reads the AGC
-static void cbReqID(char *pStr);    // Reads the transceiver ID number
-static void cbReqIF(char *pStr);    // + Reads the transceiver status
 static void cbReqIS(char *pStr);    // Sets and reads the DSP Filter Shift
-static void cbReqKS(char *pStr);    // Sets and reads the Keying speed
 static void cbReqLK(char *pStr);    // Sets and reads the Lock status
 static void cbReqLM(char *pStr);    // Sets and reads the VGS-1 electric keyer recording status.
 static void cbReqMC(char *pStr);    // Sets and reads the Memory Channel number
-static void cbReqMD(char *pStr);    // + Sets and reads the operating mode status
 // ME ?
 static void cbReqMF(char *pStr);    // Sets and reads Menu A or B
 static void cbReqMG(char *pStr);    // Sets and reads the microphone gain
-static void cbReqNB(char *pStr);    // Sets and reads the Noise Blanker function status
 static void cbReqNL(char *pStr);    // Sets and reads the Noise Blanker level
 static void cbReqNR(char *pStr);    // Sets and reads the Noise Reduction function status
 static void cbReqNT(char *pStr);    // Sets and reads the Notch Filter status
 static void cbReqPA(char *pStr);    // Sets and reads the Pre-amplifier function status
 static void cbReqPB(char *pStr);    // Sets and reads the voice and CW message playback status
-static void cbReqPC(char *pStr);    // Sets and reads the output power
 static void cbReqPR(char *pStr);    // Sets and reads the Speech Processor function ON/ OFF
 static void cbReqPS(char *pStr);    // Sets and reads the Power ON/ OFF status
 static void cbReqQR(char *pStr);    // Sets and reads the Quick Memory channel data
 static void cbReqRA(char *pStr);    // Sets and reads the RF Attenuator status
-static void cbReqRD(char *pStr);    // + Sets and reads the RIT/XIT frequency Down
 static void cbReqRG(char *pStr);    // Sets and reads the RF Gain status
 static void cbReqRM(char *pStr);    // Sets and reads the Meter function
-static void cbReqRT(char *pStr);	// + Sets and reads the RIT function status.
 // RS ?
-static void cbReqRU(char *pStr);    // + Sets and reads the RIT/XIT frequency Up
-static void cbReqRX(char *pStr);    // Sets the receiver function status
 static void cbReqSC(char *pStr);    // Sets and reads the Scan function status
 static void cbReqSD(char *pStr);    // Sets and reads the CW break-in time delay.
-static void cbReqSM(char *pStr);    // Reads the S-meter value
 static void cbReqSP(char *pStr);    // Sets and reads the split operation frequency, from the firmware version 2.00
 static void cbReqSQ(char *pStr);    // Sets and reads the squelch value
 static void cbReqTN(char *pStr);    // Sets and reads the Tone frequency
 static void cbReqTO(char *pStr);    // Sets and reads the Tone frequency
 static void cbReqTS(char *pStr);    // Sets and reads the TF-Set status
-static void cbReqTX(char *pStr);    // Sets the transmission mode
 static void cbReqTY(char *pStr);    // Get radio type
 static void cbReqVD(char *pStr);    // Sets and reads the VOX Delay time
 static void cbReqVG(char *pStr);    // Sets and reads the VOX Gain
@@ -117,14 +139,39 @@ static void cbReqVV(char *pStr);    // Performs the VFO copy (A=B) function
 static void cbReqVX(char *pStr);    // Sets and reads the VOX and Break-in function status
 static void cbReqXI(char *pStr);	// + Reads the transmit frequency and mode
 static void cbReqXO(char *pStr);    // XO Sets and reads the offset direction and frequency for the transverter mode.
-static void cbReqXT(char *pStr);	// + Sets and reads the XIT function status.
+*/
 
 
 static COMMRQ_CMD_t _commCmd[] = {
-	COMMRQ("00", cbReq00),
-    COMMRQ("AC", cbReqAC),
-    COMMRQ("AG", cbReqAG),
+    /* Kenwood */
     COMMRQ("AI", cbReqAI),
+    COMMRQ("AG0", cbReqAG0),
+	COMMRQ("FA", cbReqFA),
+	COMMRQ("FB", cbReqFB),
+	COMMRQ("FR", cbReqFR),
+	COMMRQ("FT", cbReqFT),
+    COMMRQ("ID", cbReqID),
+	COMMRQ("IF", cbReqIF),
+    COMMRQ("KS", cbReqKS),
+	COMMRQ("MD", cbReqMD),
+    COMMRQ("NB", cbReqNB),
+    COMMRQ("PC", cbReqPC),
+	COMMRQ("RD", cbReqRD),
+	COMMRQ("RT", cbReqRT),
+	COMMRQ("RU", cbReqRU),
+    COMMRQ("RX", cbReqRX),
+    COMMRQ("SM", cbReqSM),
+    COMMRQ("TX", cbReqTX),
+	COMMRQ("XT", cbReqXT),
+
+    /* Flex */
+    COMMRQ("AG",   cbReqAG0),
+    COMMRQ("ZZAG", cbReqZZAG),
+	COMMRQ("ZZFA", cbReqZZFA),
+	COMMRQ("ZZFB", cbReqZZFB),
+/*
+    COMMRQ("00", cbReq00),
+    COMMRQ("AC", cbReqAC),
     COMMRQ("AN", cbReqAN),
     COMMRQ("BC", cbReqBC),
     COMMRQ("BP", cbReqBP),
@@ -135,51 +182,35 @@ static COMMRQ_CMD_t _commCmd[] = {
     COMMRQ("CT", cbReqCT),
     COMMRQ("DA", cbReqDA),
     COMMRQ("EX", cbReqEX),
-	COMMRQ("FA", cbReqFA),
-	COMMRQ("FB", cbReqFB),
     COMMRQ("FL", cbReqFL),
-	COMMRQ("FR", cbReqFR),
     COMMRQ("FS", cbReqFS),
-	COMMRQ("FT", cbReqFT),
     COMMRQ("FV", cbReqFV),
     COMMRQ("FW", cbReqFW),
     COMMRQ("GC", cbReqGC),
-    COMMRQ("ID", cbReqID),
-	COMMRQ("IF", cbReqIF),
     COMMRQ("IS", cbReqIS),
-    COMMRQ("KS", cbReqKS),
     COMMRQ("LK", cbReqLK),
     COMMRQ("LM", cbReqLM),
     COMMRQ("MC", cbReqMC),
-	COMMRQ("MD", cbReqMD),
     COMMRQ("MF", cbReqMF),
     COMMRQ("MG", cbReqMG),
-    COMMRQ("NB", cbReqNB),
     COMMRQ("NL", cbReqNL),
     COMMRQ("NR", cbReqNR),
     COMMRQ("NT", cbReqNT),
     COMMRQ("PA", cbReqPA),
     COMMRQ("PB", cbReqPB),
-    COMMRQ("PC", cbReqPC),
     COMMRQ("PR", cbReqPR),
     COMMRQ("PS", cbReqPS),
     COMMRQ("QR", cbReqQR),
     COMMRQ("RA", cbReqRA),
-	COMMRQ("RD", cbReqRD),
     COMMRQ("RG", cbReqRG),
     COMMRQ("RM", cbReqRM),
-	COMMRQ("RT", cbReqRT),
-	COMMRQ("RU", cbReqRU),
-    COMMRQ("RX", cbReqRX),
     COMMRQ("SC", cbReqSC),
     COMMRQ("SD", cbReqSD),
-    COMMRQ("SM", cbReqSM),
     COMMRQ("SP", cbReqSP),
     COMMRQ("SQ", cbReqSQ),
     COMMRQ("TN", cbReqTN),
     COMMRQ("TO", cbReqTO),
     COMMRQ("TS", cbReqTS),
-    COMMRQ("TX", cbReqTX),
     COMMRQ("TY", cbReqTY),
     COMMRQ("VD", cbReqVD),
     COMMRQ("VG", cbReqVG),
@@ -188,14 +219,12 @@ static COMMRQ_CMD_t _commCmd[] = {
     COMMRQ("VX", cbReqVX),
 	COMMRQ("XI", cbReqXI),
     COMMRQ("XO", cbReqXO),
-	COMMRQ("XT", cbReqXT),
-
-
+*/
     COMMRQ(NULL, NULL)
 };
 
 /* Полнофункциональные */
-
+/*
 static void cbReqCH(char *pStr) {   // Operate the MULTI/CH encoder
 	if (pStr == NULL) return;
 
@@ -211,10 +240,10 @@ static void cbReqCH(char *pStr) {   // Operate the MULTI/CH encoder
 
 	if (*pStr == '1') {
 		freq -= parm_step;
-		printf("CH1\n");
+		log_info("CH1, %d", freq);
 	} else {
 		freq += parm_step;
-		printf("CH0\n");
+		log_info("CH0, %d", freq);
 	}
 
 	msg.command = ERMAK_COMMAND_SET_VFO;
@@ -223,7 +252,7 @@ static void cbReqCH(char *pStr) {   // Operate the MULTI/CH encoder
 	msg.vfoData.freq = freq;
 	SEND_REQUEST_TO_ERMAK(msg);
 }
-
+*/
 static void cbReqFA(char *pStr) {   // Sets or reads the VFO A frequency
 	if (pStr == NULL) {
 		requestFullInfo();
@@ -233,7 +262,21 @@ static void cbReqFA(char *pStr) {   // Sets or reads the VFO A frequency
 		msg.vfoData.rx = m_rxActive;
 		msg.vfoData.vfo = ERMAK_VFO_MODE_A;
 		msg.vfoData.freq = atoi(pStr);
-		printf("FA: %d\n", msg.vfoData.freq);
+		log_info("FA: %d", msg.vfoData.freq);
+		SEND_REQUEST_TO_ERMAK(msg);
+	}
+}
+
+static void cbReqZZFA(char *pStr) {   // Sets or reads the VFO A frequency
+	if (pStr == NULL) {
+		requestFullInfo();
+		snprintf(_str,sizeof(_str), "ZZFA%011d;", msg.fullInfo.vfoFreq.vfoA);
+	} else {
+		msg.command = ERMAK_COMMAND_SET_VFO;
+		msg.vfoData.rx = m_rxActive;
+		msg.vfoData.vfo = ERMAK_VFO_MODE_A;
+		msg.vfoData.freq = atoi(pStr);
+		log_info("ZZFA: %d", msg.vfoData.freq);
 		SEND_REQUEST_TO_ERMAK(msg);
 	}
 }
@@ -247,7 +290,21 @@ static void cbReqFB(char *pStr) {   // Sets or reads the VFO B frequency
 		msg.vfoData.rx = m_rxActive;
 		msg.vfoData.vfo = ERMAK_VFO_MODE_B;
 		msg.vfoData.freq = atoi(pStr);
-		printf("FB: %d\n", msg.vfoData.freq);
+		log_info("FB: %d", msg.vfoData.freq);
+		SEND_REQUEST_TO_ERMAK(msg);
+	}
+}
+
+static void cbReqZZFB(char *pStr) {   // Sets or reads the VFO B frequency
+	if (pStr == NULL) {
+		requestFullInfo();
+		snprintf(_str,sizeof(_str), "ZZFB%011d;", msg.fullInfo.vfoFreq.vfoB);
+	} else {
+		msg.command = ERMAK_COMMAND_SET_VFO;
+		msg.vfoData.rx = m_rxActive;
+		msg.vfoData.vfo = ERMAK_VFO_MODE_B;
+		msg.vfoData.freq = atoi(pStr);
+		log_info("ZZFB: %d", msg.vfoData.freq);
 		SEND_REQUEST_TO_ERMAK(msg);
 	}
 }
@@ -265,7 +322,7 @@ static void cbReqFR(char *pStr) {   // Selects or reads the VFO or Memory channe
 			msg.vfoData.vfo = ERMAK_VFO_MODE_B;
 		} else return;
 
-		printf("FR: %c\n", ch);
+		log_info("FR: %c", ch);
 		SEND_REQUEST_TO_ERMAK(msg);
 	}
 }
@@ -285,7 +342,7 @@ static void cbReqFT(char *pStr) {   // Selects or reads the VFO or Memory channe
 			vfoTx = ERMAK_VFO_MODE_B;
 		} else return;
 
-		printf("FT: %d\n", vfoTx);
+		log_info("FT: %d", vfoTx);
 
 		msg.kenwoodFT.split = (msg.fullInfo.vfoRX != vfoTx) ? ERMAK_SPLIT_ON : ERMAK_SPLIT_OFF;
 		msg.kenwoodFT.vfoRx = vfoTx;
@@ -365,7 +422,7 @@ static void cbReqMD(char *pStr) {   // Sets and reads the operating mode status
 	} else {
 		msg.command = ERMAK_COMMAND_SET_MODE;
 		int mode = atoi(pStr);
-		printf("MD: %d\n", mode);
+		log_info("MD: %d", mode);
 		msg.freqModeData.mode = cvtModeK2E(mode);
 		SEND_REQUEST_TO_ERMAK(msg);
 	}
@@ -378,7 +435,7 @@ static void cbReqRD(char *pStr) {	// Sets and reads the RIT/XIT frequency Down
 	if ((pStr != NULL) && (strlen(pStr) == 5)) {			// ToDo Scan Speed
 		step = atoi(pStr);
 	}
-	printf("RD: %d\n", step);
+	log_info("RD: %d", step);
 
 	if ((freq - step) > -9999) {		// ToDo RIT min
 		freq -= step;
@@ -399,7 +456,7 @@ static void cbReqRT(char *pStr) {	// Sets and reads the RIT function status.
 		if (*pStr == '1')
 			rit = ERMAK_RIT_ON;
 
-		printf("RT: %d\n", rit);
+		log_info("RT: %d", rit);
 		msg.command = ERMAK_COMMAND_SET_RIT;
 		msg.ritXit.rit = rit;
 		SEND_REQUEST_TO_ERMAK(msg);
@@ -413,7 +470,7 @@ static void cbReqRU(char *pStr) {	// Sets and reads the RIT/XIT frequency Down
 	if ((pStr != NULL) && (strlen(pStr) == 5)) {					// ToDo Scan Speed
 		step = atoi(pStr);
 	}
-	printf("RU: %d\n", step);
+	log_info("RU: %d", step);
 
 	if ((freq + step) < 9999) {		// ToDo RIT max
 		freq += step;
@@ -429,14 +486,14 @@ static void cbReqRX(char *pStr) {   // Sets the receiver function status.
 	msg.transmittRx.transmitt = ERMAK_TRANSMIT_OFF;
 	SEND_REQUEST_TO_ERMAK(msg);
 	snprintf(_str,sizeof(_str), "RX;");
-	printf("RX\n");
+	log_info("RX");
 }
 
 static void cbReqTX(char *pStr) {   // Sets the transmission mode.
 	char ch = '0';
 	if (pStr != NULL) ch = *pStr;
 	snprintf(_str,sizeof(_str), "TX%c;", ch);
-	printf("TX: %c\n", ch);
+	log_info("TX: %c", ch);
 
 	msg.command = ERMAK_COMMAND_SET_TRANSMITT_RX;
 	msg.transmittRx.rx = m_rxActive;
@@ -444,6 +501,7 @@ static void cbReqTX(char *pStr) {   // Sets the transmission mode.
 	SEND_REQUEST_TO_ERMAK(msg);
 }
 
+/*
 static void cbReqVV(char *pStr) {   // Performs the VFO copy (A=B) function.
 	// здесь проситься команда A=B/B=A
 	requestFullInfo();
@@ -453,7 +511,7 @@ static void cbReqVV(char *pStr) {   // Performs the VFO copy (A=B) function.
 	msg.vfoData.vfo = ERMAK_VFO_MODE_B;
 	msg.vfoData.freq = freq;
 	SEND_REQUEST_TO_ERMAK(msg);
-	printf("VV\n");
+	log_info("VV");
 }
 
 static void cbReqXI(char *pStr) {   // Reads the transmit frequency and mode
@@ -467,7 +525,7 @@ static void cbReqXI(char *pStr) {   // Reads the transmit frequency and mode
 	char datamode = '0';
 	snprintf(_str,sizeof(_str), "XI%011d%c00;", freq, datamode);
 }
-
+*/
 static void cbReqXT(char *pStr) {	// Sets and reads the XIT function status.
 	if (pStr == NULL) {
 		requestFullInfo();
@@ -479,7 +537,7 @@ static void cbReqXT(char *pStr) {	// Sets and reads the XIT function status.
 		if (*pStr == '1')
 			xit = ERMAK_XIT_ON;
 
-		printf("XT: %d\n", xit);
+		log_info("XT: %d", xit);
 		msg.command = ERMAK_COMMAND_SET_XIT;
 		msg.ritXit.xit = xit;
 		SEND_REQUEST_TO_ERMAK(msg);
@@ -489,23 +547,72 @@ static void cbReqXT(char *pStr) {	// Sets and reads the XIT function status.
 
 /* Не связаны с базой */
 
-static void cbReqAG(char *pStr) {   // Sets or reads the AF gain
-	if ((pStr != NULL) && (strlen(pStr) == 4)) {
+static void cbReqAG0(char *pStr) {   // Sets or reads the AF gain
+	if (pStr != NULL)
 		parm_af = atoi(pStr);
-		printf("AG: %d\n", parm_af);
+		log_info("AG0: %d", parm_af);
 	} else {
 		snprintf(_str,sizeof(_str), "AG0%03d;", parm_af);
+	}
+}
+
+static void  cbReqZZAG(char *pStr) {    // Sets or reads VFO A Audio Gain
+	if (pStr != NULL)
+		parm_af = atoi(pStr);
+		log_info("ZZAG: %d", parm_af);
+	} else {
+		snprintf(_str,sizeof(_str), "ZZAG%03d;", parm_af);
 	}
 }
 
 static void cbReqAI(char *pStr) {   // Sets or reads the Auto Information (AI) function ON/ OFF
 	if (pStr != NULL) {
 		parm_ai = *pStr - '0';
-		printf("AI: %d\n", parm_ai);
+		log_info("AI: %d", parm_ai);
 	}
 	snprintf(_str,sizeof(_str), "AI%d;", parm_ai);
 }
 
+static void cbReqPC(char *pStr) {   // Sets and reads the output power
+	if (pStr == NULL) {
+		snprintf(_str,sizeof(_str), "PC%03d;", parm_pwr);
+	} else {
+		int pwr = atoi(pStr);
+		if (pwr < 5) pwr = 5;
+		else if (pwr > 100) pwr = 100;
+		parm_pwr = pwr;
+		log_info("PC: %d", pwr);
+	}
+}
+
+/* Заглушки */
+static void cbReqID(char *pStr) {   // Reads the transceiver ID number
+	snprintf(_str,sizeof(_str), "ID021;");  /* 021 - TS590S,     023 - TS590SG
+                                               904 - Flex-6700,  905 - Flex-6500, 
+                                               906 - Flex-6700R, 907 - Flex-6300 */
+}
+
+static void cbReqKS(char *pStr) {   // Sets and reads the Keying speed
+	if (pStr == NULL) {
+		snprintf(_str,sizeof(_str), "KS025;");
+	} else {
+		log_info("KS: %s", pStr);
+	}
+}
+
+static void cbReqNB(char *pStr) {   // Sets and reads the Noise Blanker function status.
+	if (pStr == NULL) {
+		snprintf(_str,sizeof(_str), "NB0;");
+	} else {
+		log_info("NB: %s", pStr);
+	}
+}
+
+static void cbReqSM(char *pStr) {   // Reads the S-meter value
+	snprintf(_str,sizeof(_str), "SM00010;");
+}
+
+/*
 static void cbReqEX(char *pStr) {   // Sets or reads the Menu.
 	if (pStr == NULL) return;
 
@@ -519,7 +626,7 @@ static void cbReqEX(char *pStr) {   // Sets or reads the Menu.
 		uint16_t resp = commcat_rd_menu(idx);
 		snprintf(_str,sizeof(_str), "EX%03d0000%d;", resp);
 	} else {
-		printf("EX Set: %d, %s\n", idx, &pStr[7]);
+		log_info("EX Set: %d, %s", idx, &pStr[7]);
 	}
 }
 
@@ -531,7 +638,7 @@ static void cbReqGC(char *pStr) {   // Sets or reads the AGC.
 		if (ch == '1' || ch == '3')  parm_agc = 1;
 		else if (ch == '0') parm_agc = 0;
 		else if (ch == '2') parm_agc = 2;
-		printf("GC: %d\n", parm_agc);
+		log_info("GC: %d", parm_agc);
 	}
 }
 
@@ -542,19 +649,7 @@ static void cbReqMF(char *pStr) {   // Sets and reads Menu A or B
 		char ch = *pStr;
 		if ( ch == '0' ) parm_menu = 0;
 		else if (ch == '1') parm_menu = 1;
-		printf("MF: %d\n", parm_menu);
-	}
-}
-
-static void cbReqPC(char *pStr) {   // Sets and reads the output power
-	if (pStr == NULL) {
-		snprintf(_str,sizeof(_str), "PC%03d;", parm_pwr);
-	} else {
-		int pwr = atoi(pStr);
-		if (pwr < 5) pwr = 5;
-		else if (pwr > 100) pwr = 100;
-		parm_pwr = pwr;
-		printf("PC: %d\n", pwr);
+		log_info("MF: %d", parm_menu);
 	}
 }
 
@@ -566,7 +661,7 @@ static void cbReqRG(char *pStr) {   // Sets and reads the RF Gain status.
 		if (rf < 0) rf = 0;
 		else if (rf > 255) rf = 255;
 		parm_rf = rf;
-		printf("RG: %d\n", parm_rf);
+		log_info("RG: %d", parm_rf);
 	}
 }
 
@@ -576,14 +671,14 @@ static void cbReqSQ(char *pStr) {   // Sets and reads the squelch value
 		if (sql < 0) sql = 0;
 		else if (sql > 255) sql = 255;
 		parm_sql = sql;
-		printf("SQ: %d\n", parm_sql);
+		log_info("SQ: %d", parm_sql);
 	}
 	snprintf(_str,sizeof(_str), "SQ0%03d;", parm_sql);
 }
-
+*/
 
 /* Заглушки */
-
+/*
 static void cbReq00(char *pStr) {   // No Info
 	snprintf(_str,sizeof(_str), "000;");
 }
@@ -592,7 +687,7 @@ static void cbReqAC(char *pStr) {   // Sets or reads the internal antenna tuner 
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "AC000;");
 	} else {
-		printf("AC: %s\n", pStr);
+		log_info("AC: %s", pStr);
 	}
 }
 
@@ -600,7 +695,7 @@ static void cbReqAN(char *pStr) {   // Selects the antenna connector ANT1/ ANT2
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "AN011;");
 	} else {
-		printf("AN: %s\n", pStr);
+		log_info("AN: %s", pStr);
 	}
 }
 
@@ -608,7 +703,7 @@ static void cbReqBC(char *pStr) {   // Sets or reads the Beat Cancel function st
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "BC0;");
 	} else {
-		printf("BC: %s\n", pStr);
+		log_info("BC: %s", pStr);
 	}
 }
 
@@ -616,7 +711,7 @@ static void cbReqBP(char *pStr) {   // Adjusts the Notch Frequency of the Manual
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "BP080;");
 	} else {
-		printf("BP: %s\n", pStr);
+		log_info("BP: %s", pStr);
 	}
 }
 
@@ -628,7 +723,7 @@ static void cbReqCA(char *pStr) {   // Sets and reads the CW TUNE function statu
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "CA0;");
 	} else {
-		printf("CA: %s\n", pStr);
+		log_info("CA: %s", pStr);
 	}
 }
 
@@ -636,7 +731,7 @@ static void cbReqCN(char *pStr) {   // Sets and reads the CTCSS frequency.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "CN00;");
 	} else {
-		printf("CN: %s\n", pStr);
+		log_info("CN: %s", pStr);
 	}
 }
 
@@ -644,7 +739,7 @@ static void cbReqCT(char *pStr) {   // Sets and reads the CTCSS function status
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "CT0;");
 	} else {
-		printf("CT: %s\n", pStr);
+		log_info("CT: %s", pStr);
 	}
 }
 
@@ -652,7 +747,7 @@ static void cbReqDA(char *pStr) {   // Sets and reads the DATA mode
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "DA0;");
 	} else {
-		printf("DA: %s\n", pStr);
+		log_info("DA: %s", pStr);
 	}
 }
 
@@ -660,7 +755,7 @@ static void cbReqFL(char *pStr) {   // Sets and reads the IF filter
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "FL1;");
 	} else {
-		printf("FL: %s\n", pStr);
+		log_info("FL: %s", pStr);
 	}
 }
 
@@ -668,47 +763,37 @@ static void cbReqFS(char *pStr) {   // Sets and reads the Fine Tuning function s
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "FS0;");
 	} else {
-		printf("FS: %s\n", pStr);
+		log_info("FS: %s", pStr);
 	}
 }
 
 static void cbReqFV(char *pStr) {   // Verifies the Firmware version.
-	snprintf(_str,sizeof(_str), "FV1.02;");		// Last 2.05
+	snprintf(_str,sizeof(_str), "FV2.05;");		// Last 2.05
 }
 
 static void cbReqFW(char *pStr) {   // Sets or reads the DSP filtering bandwidth.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "FW2700;");
 	} else {
-		printf("FW: %s\n", pStr);
+		log_info("FW: %s", pStr);
 	}
 }
 
-static void cbReqID(char *pStr) {   // Reads the transceiver ID number
-	snprintf(_str,sizeof(_str), "ID021;"); /* 021 - TS590S, 023 - TS590SG */
-}
 
 static void cbReqIS(char *pStr) {   // Sets and reads the DSP Filter Shift.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "IS 0800;");
 	} else {
-		printf("IS: %s\n", pStr);
+		log_info("IS: %s", pStr);
 	}
 }
 
-static void cbReqKS(char *pStr) {   // Sets and reads the Keying speed
-	if (pStr == NULL) {
-		snprintf(_str,sizeof(_str), "KS025;");
-	} else {
-		printf("KS: %s\n", pStr);
-	}
-}
 
 static void cbReqLK(char *pStr) {   // Sets and reads the Lock status
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "LK0;");
 	} else {
-		printf("LK: %s\n", pStr);
+		log_info("LK: %s", pStr);
 	}
 }
 
@@ -716,7 +801,7 @@ static void cbReqLM(char *pStr) {   // Sets and reads the VGS-1 electric keyer r
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "LM00000;");
 	} else {
-		printf("LM: %s\n", pStr);
+		log_info("LM: %s", pStr);
 	}
 }
 
@@ -724,7 +809,7 @@ static void cbReqMC(char *pStr) {   // Sets and reads the Memory Channel number
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "MC000;");
 	} else {
-		printf("MC: %s\n", pStr);
+		log_info("MC: %s", pStr);
 	}
 }
 
@@ -732,23 +817,16 @@ static void cbReqMG(char *pStr) {   // Sets and reads the microphone gain.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "MG050;");
 	} else {
-		printf("MG: %s\n", pStr);
+		log_info("MG: %s", pStr);
 	}
 }
 
-static void cbReqNB(char *pStr) {   // Sets and reads the Noise Blanker function status.
-	if (pStr == NULL) {
-		snprintf(_str,sizeof(_str), "NB0;");
-	} else {
-		printf("NB: %s\n", pStr);
-	}
-}
 
 static void cbReqNL(char *pStr) {   // Sets and reads the Noise Blanker level
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "NL005;");
 	} else {
-		printf("NL: %s\n", pStr);
+		log_info("NL: %s", pStr);
 	}
 }
 
@@ -756,7 +834,7 @@ static void cbReqNR(char *pStr) {   // Sets and reads the Noise Reduction functi
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "NR0;");
 	} else {
-		printf("NR: %s\n", pStr);
+		log_info("NR: %s", pStr);
 	}
 }
 
@@ -764,7 +842,7 @@ static void cbReqNT(char *pStr) {   // Sets and reads the Notch Filter status.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "NT00;");
 	} else {
-		printf("NT: %s\n", pStr);
+		log_info("NT: %s", pStr);
 	}
 }
 
@@ -772,7 +850,7 @@ static void cbReqPA(char *pStr) {   // Sets and reads the Pre-amplifier function
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "PA00;");
 	} else {
-		printf("PA: %s\n", pStr);
+		log_info("PA: %s", pStr);
 	}
 }
 
@@ -780,7 +858,7 @@ static void cbReqPB(char *pStr) {   // Sets and reads the voice and CW message p
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "PB0000;");
 	} else {
-		printf("PB: %s\n", pStr);
+		log_info("PB: %s", pStr);
 	}
 }
 
@@ -788,7 +866,7 @@ static void cbReqPR(char *pStr) {   // Sets and reads the Speech Processor funct
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "PR0;");
 	} else {
-		printf("PR: %s\n", pStr);
+		log_info("PR: %s", pStr);
 	}
 }
 
@@ -802,7 +880,7 @@ static void cbReqQR(char *pStr) {   // Sets and reads the Quick Memory channel d
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "QR00;");
 	} else {
-		printf("QR: %s\n", pStr);
+		log_info("QR: %s", pStr);
 	}
 }
 
@@ -810,7 +888,7 @@ static void cbReqRA(char *pStr) {   // Sets and reads the RF Attenuator status.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "RA0000;");
 	} else {
-		printf("RA: %s\n", pStr);
+		log_info("RA: %s", pStr);
 	}
 }
 
@@ -818,7 +896,7 @@ static void cbReqRM(char *pStr) {   // Sets and reads the Meter function
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "RM00000;");
 	} else {
-		printf("RM: %s\n", pStr);
+		log_info("RM: %s", pStr);
 	}
 }
 
@@ -826,7 +904,7 @@ static void cbReqSC(char *pStr) {   // Sets and reads the Scan function status
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "SC00;");
 	} else {
-		printf("SC: %s\n", pStr);
+		log_info("SC: %s", pStr);
 	}
 }
 
@@ -834,20 +912,17 @@ static void cbReqSD(char *pStr) {   // Sets and reads the CW break-in time delay
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "SD0250;");
 	} else {
-		printf("SD: %s\n", pStr);
+		log_info("SD: %s", pStr);
 	}
 }
 
-static void cbReqSM(char *pStr) {   // Reads the S-meter value
-	snprintf(_str,sizeof(_str), "SM00010;");
-}
 
 static void cbReqSP(char *pStr) {   // Sets and reads the split operation frequency
 	// from the firmware version 2.00
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "SP0;");
 	} else {
-		printf("SP: %s\n", pStr);
+		log_info("SP: %s", pStr);
 	}
 }
 
@@ -855,7 +930,7 @@ static void cbReqTN(char *pStr) {   // Sets and reads the Tone frequency.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "TN00;");
 	} else {
-		printf("TN: %s\n", pStr);
+		log_info("TN: %s", pStr);
 	}
 }
 
@@ -863,7 +938,7 @@ static void cbReqTO(char *pStr) {   // Sets and reads the Tone frequency.
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "TO0;");
 	} else {
-		printf("TO: %s\n", pStr);
+		log_info("TO: %s", pStr);
 	}
 }
 
@@ -871,7 +946,7 @@ static void cbReqTS(char *pStr) {   // Sets and reads the TF-Set status
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "TS0;");
 	} else {
-		printf("TS: %s\n", pStr);
+		log_info("TS: %s", pStr);
 	}
 }
 
@@ -883,7 +958,7 @@ static void cbReqVD(char *pStr) {   // Sets and reads the VOX Delay time
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "VD0600;");
 	} else {
-		printf("VD: %s\n", pStr);
+		log_info("VD: %s", pStr);
 	}
 }
 
@@ -891,7 +966,7 @@ static void cbReqVG(char *pStr) {   // Sets and reads the VOX Gain
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "VG005;");
 	} else {
-		printf("VG: %s\n", pStr);
+		log_info("VG: %s", pStr);
 	}
 }
 
@@ -900,7 +975,7 @@ static void cbReqVR(char *pStr) {   // Sets and reads the VOX Gain
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "VR0;");
 	} else {
-		printf("VR: %s\n", pStr);
+		log_info("VR: %s", pStr);
 	}
 }
 
@@ -908,7 +983,7 @@ static void cbReqVX(char *pStr) {   // Sets and reads the VOX and Break-in funct
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "VX0;");
 	} else {
-		printf("VX: %s\n", pStr);
+		log_info("VX: %s", pStr);
 	}
 }
 
@@ -916,9 +991,10 @@ static void cbReqXO(char *pStr) {   // XO Sets and reads the offset direction an
 	if (pStr == NULL) {
 		snprintf(_str,sizeof(_str), "XO000000000000;");
 	} else {
-		printf("XO: %s\n", pStr);
+		log_info("XO: %s", pStr);
 	}
 }
+*/
 
 /* Конверторы и прочее */
 
@@ -997,7 +1073,7 @@ static uint16_t commcat_rd_menu(uint8_t idx)
 			return 0;
 
 		default:
-			printf("EX Req Unknown IDX: %d\n", idx);
+			log_debug("EX Req Unknown IDX: %d", idx);
 			break;
 	}
 	return 0;
@@ -1022,28 +1098,31 @@ int commcat_req(char *pReq, char *pResp)
     int i = 0;
     COMMRQ_CMD_t * cmdlist;
     cmdlist = &_commCmd[i++];
-    
+
     _str[0] = 0;
 
-    //printf("CR: '%s' ", pReq);
+    log_trace("CR: '%s' ", pReq);
 
+    size_t req_len = strlen(pReq);
     while(cmdlist->command != NULL){
-        if (memcmp(cmdlist->command, pReq, 2) == 0) {
+        size_t cmd_len = strlen(cmdlist->command);
+
+        if ((cmd_len <= req_len) && (strncmp(cmdlist->command, pReq, cmd_len) == 0)) {
             char *pParm;
-            if (strlen(pReq) > 2)
-                pParm = &pReq[2];
+            if (req_len > cmd_len)
+                pParm = &pReq[cmd_len];
             else
                 pParm = NULL;
 
             cmdlist->cb(pParm);
-            
+
             size_t len = 0;
             if (_str[0] != 0)
             {
                 len = strlen(_str);
                 // Send Answer
                 strcpy(pResp, _str);
-                //printf("CA: '%s'\n", _str);
+                log_trace("CA: '%s'", _str);
             }
             return len;
         }
@@ -1055,6 +1134,6 @@ int commcat_req(char *pReq, char *pResp)
 	snprintf(_str,sizeof(_str), "?;");
 	strcpy(pResp, _str);
 
-	printf("C UNK: '%s'\n", pReq);
+	log_warn("C UNK: '%s'", pReq);
 	return strlen(_str);
 }
